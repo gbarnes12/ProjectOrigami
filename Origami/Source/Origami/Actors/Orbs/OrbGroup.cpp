@@ -85,6 +85,7 @@ void AOrbGroup::GenerateOrbs()
 	this->OrbsSceneComponent->RegisterComponent();
 	this->OrbsSceneComponent->ResetRelativeTransform();
 
+	// load static mesh
 	UStaticMesh* orbMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *this->OrbMeshFileName));
 	if (!orbMesh)
 	{
@@ -92,6 +93,7 @@ void AOrbGroup::GenerateOrbs()
 		return;
 	}
 	
+	// create the area in which we want to spawn the orbs 
 	FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
 
 	// we know how many orbs we need to create upfront 

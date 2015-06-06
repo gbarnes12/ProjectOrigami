@@ -35,11 +35,12 @@ public:
 
 
 	void BeginPlay();
-
 	void Tick(float deltaSeconds);
 
 private:
+	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
+	/* This component holds all the orbs and is used to move them as a unit. */
 	class USceneComponent* OrbsSceneComponent;
 
 	float TravelledDistanceOnPath;
