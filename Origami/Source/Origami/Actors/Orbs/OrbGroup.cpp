@@ -56,22 +56,19 @@ void AOrbGroup::Tick(float deltaSeconds)
 
 	float pathDistance = this->OrbPath->GetSplineLength();
 	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, 100.0f);
-	
-	
+
 	if (this->TravelledDistanceOnPath >= pathDistance)
 		this->TravelledDistanceOnPath = 0.0f;
 
 	FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
-	rotation.Pitch = 90.0f;
-
 	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
-	//this->OrbsSceneComponent->SetWorldLocation(location, true);
 }
 
 void AOrbGroup::BeginPlay()
 {
 	Super::BeginPlay();
+
 	this->BoxSceneComponent->ResetRelativeTransform();
 	this->OrbPath->ResetRelativeTransform();
 
@@ -109,11 +106,10 @@ void AOrbGroup::GenerateOrbs()
 		UE_LOG(LogTemp, Error, TEXT("Couldn't load orb mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
-
-
+	 
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
-	for (uint16 i = 0; i < 1; i++)
+	for (uint16 i = 0; i < this->OrbCount; i++)
 	{
 		FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
 		FName fMeshName = FName(*staticMeshCompName);
@@ -127,21 +123,16 @@ void AOrbGroup::GenerateOrbs()
 			meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			meshComp->SetStaticMesh(orbMesh);
 			meshComp->SetRelativeScale3D(meshScale);
-			meshComp->SetRelativeLocation(FVector::ZeroVector);
+			meshComp->SetRelativeLocation(location);
 			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
 			meshComp->AttachTo(this->OrbsSceneComponent);
 			meshComp->RegisterComponent();
 		}
 	}
 
-	FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(0);
-	rotation.Pitch = 90.0f;
-
-	UE_LOG(LogTemp, Warning, TEXT("Length of spline: %f"), this->OrbPath->GetSplineLength());
-//	UE_LOG(LogTemp, Warning, TEXT("Rotation %f %f %f"), rotation.Yaw, rotation.Pitch, rotation.Roll);
-	this->OrbsSceneComponent->SetWorldRotation(rotation);
+	//FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(0);
+	//rotation.Pitch = 90.0f;
 	this->OrbsSceneComponent->SetWorldLocation(this->OrbPath->GetWorldLocationAtDistanceAlongSpline(0));
-	
 	this->StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 	this->bIsGenerated = true;
 }
