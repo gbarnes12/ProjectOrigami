@@ -33,17 +33,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
-	class USceneComponent* RootSceneComponent;
-	class UBoxComponent* BoxSceneComponent;
-	class USceneComponent* OrbsSceneComponent;
 
 	void BeginPlay();
 
 	void Tick(float deltaSeconds);
 
 private:
+	class USceneComponent* RootSceneComponent;
+	class USceneComponent* OrbsSceneComponent;
+
 	float TravelledDistanceOnPath;
-	float StartTime;
 	EOrbMode Mode;
 	bool bIsGenerated;
 

@@ -14,7 +14,6 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->bIsGenerated = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
-	this->BoxSceneComponent = NULL;
 
 	// Root Scene Component
 	this->RootSceneComponent = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -23,23 +22,13 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 
 	if (this->RootSceneComponent)
 	{
-		// Box Component
-		this->BoxSceneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("OrbSpawnBox"));
-		if (this->BoxSceneComponent)
-		{
-			this->BoxSceneComponent->SetBoxExtent(FVector(this->OrbSpawnBoxExtents), false);
-			this->BoxSceneComponent->SetRelativeLocation(FVector::ZeroVector);
-			this->BoxSceneComponent->AttachTo(this->RootComponent);
-			this->BoxSceneComponent->RegisterComponent();
-		}
-
 		// Spline Component
 		this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
 		if (this->OrbPath)
 		{
 			this->OrbPath->AttachTo(this->RootComponent);
 			this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
-			this->OrbPath->RegisterComponent();
+			//this->OrbPath->RegisterComponent();
 		}
 	}
 }
@@ -69,15 +58,11 @@ void AOrbGroup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	this->BoxSceneComponent->ResetRelativeTransform();
 	this->OrbPath->ResetRelativeTransform();
 
 	// GenerateOrbs only at runtime 
 	// if we do this within the constructor the editor becomes slow as fuck somehow?!
 	this->GenerateOrbs();
-
-	this->BoxSceneComponent->UnregisterComponent();
-	this->BoxSceneComponent->DestroyComponent();
 }
 
 void AOrbGroup::GenerateOrbs()
@@ -106,14 +91,16 @@ void AOrbGroup::GenerateOrbs()
 		UE_LOG(LogTemp, Error, TEXT("Couldn't load orb mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
-	 
+	
+	FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
+
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
 	for (uint16 i = 0; i < this->OrbCount; i++)
 	{
 		FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
 		FName fMeshName = FName(*staticMeshCompName);
-		FVector location = FMath::RandPointInBox(FBox::BuildAABB(BoxSceneComponent->GetRelativeTransform().GetLocation(), this->BoxSceneComponent->GetScaledBoxExtent()));
+		FVector location = FMath::RandPointInBox(spawnBox);
 		//UE_LOG(LogTemp, Warning, TEXT("Location %f %f %f"), location.X, location.Y, location.Z);
 
 		// now we can create a static mesh component!
@@ -133,6 +120,5 @@ void AOrbGroup::GenerateOrbs()
 	//FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(0);
 	//rotation.Pitch = 90.0f;
 	this->OrbsSceneComponent->SetWorldLocation(this->OrbPath->GetWorldLocationAtDistanceAlongSpline(0));
-	this->StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 	this->bIsGenerated = true;
 }
