@@ -2,7 +2,7 @@
 
 #include "Origami.h"
 #include "OrigamiGameMode.h"
-#include "OrigamiCharacter.h"
+#include "Actors/Characters/Player/OrigamiCharacter.h"
 
 AOrigamiGameMode::AOrigamiGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
