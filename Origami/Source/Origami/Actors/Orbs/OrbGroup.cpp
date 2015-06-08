@@ -1,6 +1,5 @@
 #include "Origami.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
-#include "Runtime/Engine/Classes/Engine/StreamableManager.h"
 #include "OrbGroup.h"
 
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
@@ -28,7 +27,6 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 		{
 			this->OrbPath->AttachTo(this->RootComponent);
 			this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
-			//this->OrbPath->RegisterComponent();
 		}
 	}
 }
@@ -39,6 +37,9 @@ void AOrbGroup::Tick(float deltaSeconds)
 
 	//UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->RootComponent->GetComponentLocation(), FVector(200), FLinearColor::Red, FRotator::ZeroRotator, 0.1f);
 	//UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->BoxSceneComponent->GetComponentLocation(), this->BoxSceneComponent->GetUnscaledBoxExtent(), FLinearColor::Blue, FRotator::ZeroRotator, 0.1f);
+
+	if (!this->OrbsSceneComponent->IsValidLowLevelFast())
+		return;
 
 	if (!this->OrbPath)
 		return;   
@@ -51,6 +52,7 @@ void AOrbGroup::Tick(float deltaSeconds)
 
 	FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
+	
 	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
 }
 
@@ -86,13 +88,20 @@ void AOrbGroup::GenerateOrbs()
 	this->OrbsSceneComponent->ResetRelativeTransform();
 
 	// load static mesh
-	UStaticMesh* orbMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *this->OrbMeshFileName));
-	if (!orbMesh)
+	this->OrbMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *this->OrbMeshFileName));
+	if (!this->OrbMesh)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Couldn't load orb mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
-	
+
+	this->OrbMaterialInstance = UMaterialInstanceDynamic::Create(this->OrbMesh->GetMaterial(0), this);
+	if (!this->OrbMaterialInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't create dynamic material instance from mesh with filename %s"), *this->OrbMeshFileName);
+		return;
+	}
+
 	// create the area in which we want to spawn the orbs 
 	FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
 
@@ -110,7 +119,7 @@ void AOrbGroup::GenerateOrbs()
 		if (meshComp) 
 		{
 			meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			meshComp->SetStaticMesh(orbMesh);
+			meshComp->SetStaticMesh(this->OrbMesh);
 			meshComp->SetRelativeScale3D(meshScale);
 			meshComp->SetRelativeLocation(location);
 			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
@@ -119,8 +128,6 @@ void AOrbGroup::GenerateOrbs()
 		}
 	}
 
-	//FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(0);
-	//rotation.Pitch = 90.0f;
 	this->OrbsSceneComponent->SetWorldLocation(this->OrbPath->GetWorldLocationAtDistanceAlongSpline(0));
 	this->bIsGenerated = true;
 }

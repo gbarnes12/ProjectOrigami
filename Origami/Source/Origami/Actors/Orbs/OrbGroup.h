@@ -1,6 +1,7 @@
 #pragma once
 #include "GameFramework/Actor.h"
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
+#include "Runtime/Engine/Classes/Engine/StaticMesh.h"
 #include "OrbGroup.generated.h"
 
 enum EOrbMode {
@@ -43,8 +44,16 @@ private:
 	/* This component holds all the orbs and is used to move them as a unit. */
 	class USceneComponent* OrbsSceneComponent;
 
-	float TravelledDistanceOnPath;
+	/* Pointer to the static mesh we use for the orb mesh */
+	UStaticMesh* OrbMesh;
+
+	/* Pointer to the orb material instance in order to modify parameters at runtime. */
+	class UMaterialInstanceDynamic* OrbMaterialInstance;
+
+	/* The mode this orb group is currently in. */
 	EOrbMode Mode;
+	float MovementSpeed;
+	float TravelledDistanceOnPath;
 	bool bIsGenerated;
 
 	void GenerateOrbs();
