@@ -29,6 +29,9 @@ public:
 	FString OrbMeshFileName;
 
 	UPROPERTY(EditAnywhere, Category = Visual)
+	TArray<float> OrbSpeedLevel;
+
+	UPROPERTY(EditAnywhere, Category = Visual)
 	float OrbSpawnBoxExtents;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
@@ -45,10 +48,13 @@ private:
 	class USceneComponent* OrbsSceneComponent;
 
 	/* Pointer to the static mesh we use for the orb mesh */
-	UStaticMesh* OrbMesh;
+	class UStaticMesh* OrbMesh;
 
 	/* Pointer to the orb material instance in order to modify parameters at runtime. */
 	class UMaterialInstanceDynamic* OrbMaterialInstance;
+
+	/* Handle to the timer that will adjust the speed periodically */
+	struct FTimerHandle AdjustSpeedTimerHandle;
 
 	/* The mode this orb group is currently in. */
 	EOrbMode Mode;
@@ -57,4 +63,7 @@ private:
 	bool bIsGenerated;
 
 	void GenerateOrbs();
+
+	/* Timer based event methods */
+	void AdjustSpeed();
 };

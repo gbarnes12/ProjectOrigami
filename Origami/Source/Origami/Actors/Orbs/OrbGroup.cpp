@@ -1,15 +1,23 @@
 #include "Origami.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 #include "OrbGroup.h"
 
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	this->OrbSpeedLevel.Reserve(3);
+	this->OrbSpeedLevel.Add(100.0f);
+	this->OrbSpeedLevel.Add(160.0f);
+	this->OrbSpeedLevel.Add(240.0f);
+
 	this->TravelledDistanceOnPath = 0.0f;
+	this->MovementSpeed = OrbSpeedLevel[0];
 	this->Mode = EOrbMode::Swarm;
 	this->OrbCount = 20;
 	this->OrbColor = FColor::White;
 	this->OrbSpawnBoxExtents = 40.0f;
+
 	this->bIsGenerated = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
@@ -31,7 +39,24 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-void AOrbGroup::Tick(float deltaSeconds) 
+void AOrbGroup::BeginPlay()
+{
+	Super::BeginPlay();
+
+	this->OrbPath->ResetRelativeTransform();
+
+	// GenerateOrbs only at runtime 
+	// if we do this within the constructor the editor becomes slow as fuck somehow?!
+	this->GenerateOrbs();
+
+	/*Start the timer that will adjust the speed over time*/
+	GetWorldTimerManager().ClearTimer(AdjustSpeedTimerHandle);
+	GetWorldTimerManager().SetTimer(AdjustSpeedTimerHandle, this, &AOrbGroup::AdjustSpeed, 5.0f, true);
+	UE_LOG(LogTemp, Warning, TEXT("Created timer"));
+}
+
+
+void AOrbGroup::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
@@ -42,29 +67,31 @@ void AOrbGroup::Tick(float deltaSeconds)
 		return;
 
 	if (!this->OrbPath)
-		return;   
+		return;
 
 	float pathDistance = this->OrbPath->GetSplineLength();
-	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, 100.0f);
+	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, this->MovementSpeed);
 
 	if (this->TravelledDistanceOnPath >= pathDistance)
 		this->TravelledDistanceOnPath = 0.0f;
 
 	FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
-	
+
 	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
 }
 
-void AOrbGroup::BeginPlay()
+void AOrbGroup::AdjustSpeed() 
 {
-	Super::BeginPlay();
 
-	this->OrbPath->ResetRelativeTransform();
+	if (this->MovementSpeed == OrbSpeedLevel[0])
+		this->MovementSpeed = OrbSpeedLevel[2];
+	else if (this->MovementSpeed == OrbSpeedLevel[2])
+		this->MovementSpeed = OrbSpeedLevel[1];
+	else if (this->MovementSpeed == OrbSpeedLevel[1])
+		this->MovementSpeed = OrbSpeedLevel[0];
 
-	// GenerateOrbs only at runtime 
-	// if we do this within the constructor the editor becomes slow as fuck somehow?!
-	this->GenerateOrbs();
+	UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
 }
 
 void AOrbGroup::GenerateOrbs()
@@ -77,8 +104,6 @@ void AOrbGroup::GenerateOrbs()
 	this->OrbsSceneComponent = ConstructObject<USceneComponent>(USceneComponent::StaticClass(), this, TEXT("Orbs"));
 	if (!this->OrbsSceneComponent)
 		return;
-
-	UE_LOG(LogTemp, Warning, TEXT("Number of Spline points:  %i"), this->OrbPath->GetNumSplinePoints());
 
 	FVector meshScale = FVector(0.2f, 0.2f, 0.2f);
 
@@ -101,6 +126,7 @@ void AOrbGroup::GenerateOrbs()
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create dynamic material instance from mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
+
 
 	// create the area in which we want to spawn the orbs 
 	FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
