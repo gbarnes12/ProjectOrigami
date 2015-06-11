@@ -26,6 +26,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	UFUNCTION(BlueprintCallable, Category = TDLHelpers)
+	static FString GetCurrentLevel(AActor * sourceActor);
+
 protected:
 
 	/** Called for forwards/backward input */

@@ -42,6 +42,18 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
 
+
+FString AOrigamiCharacter::GetCurrentLevel(AActor * sourceActor)
+{
+	if (sourceActor == NULL)
+	{
+		return FString(TEXT("Must have a sourceActor (was NULL)"));
+	}
+
+	return sourceActor->GetWorld()->GetMapName();
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 

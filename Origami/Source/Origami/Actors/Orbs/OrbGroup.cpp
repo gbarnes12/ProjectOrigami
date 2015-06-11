@@ -101,7 +101,7 @@ void AOrbGroup::GenerateOrbs()
 	if (this->bIsGenerated)
 		return;
 
-	this->OrbsSceneComponent = ConstructObject<USceneComponent>(USceneComponent::StaticClass(), this, TEXT("Orbs"));
+	this->OrbsSceneComponent = NewObject<USceneComponent>(this, USceneComponent::StaticClass(), TEXT("Orbs"));
 	if (!this->OrbsSceneComponent)
 		return;
 
@@ -120,13 +120,21 @@ void AOrbGroup::GenerateOrbs()
 		return;
 	}
 
+	FString particleSystemName = TEXT("StaticMesh'/Game/Origami/Particles/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail'");
+
+	UParticleSystem* ps = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), NULL, *particleSystemName));
+	if (!ps)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't load particle system with name %s"), *particleSystemName);
+		return;
+	}
+
 	this->OrbMaterialInstance = UMaterialInstanceDynamic::Create(this->OrbMesh->GetMaterial(0), this);
 	if (!this->OrbMaterialInstance)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create dynamic material instance from mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
-
 
 	// create the area in which we want to spawn the orbs 
 	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
@@ -141,15 +149,30 @@ void AOrbGroup::GenerateOrbs()
 		//UE_LOG(LogTemp, Warning, TEXT("Location %f %f %f"), location.X, location.Y, location.Z);
 
 		// now we can create a static mesh component!
-		UStaticMeshComponent* meshComp = ConstructObject<UStaticMeshComponent>(UStaticMeshComponent::StaticClass(), this, fMeshName);
+		UStaticMeshComponent* meshComp = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), fMeshName);
 		if (meshComp) 
 		{
+			
 			meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			meshComp->SetStaticMesh(this->OrbMesh);
 			meshComp->SetRelativeScale3D(meshScale);
 			meshComp->SetRelativeLocation(location);
 			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
 			meshComp->AttachTo(this->OrbsSceneComponent);
+			
+			const FString particleSystemName = "PS_" + FString::FromInt(i);
+
+			UParticleSystemComponent* psComp = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass(), FName(*particleSystemName));
+			if (psComp) 
+			{
+				
+				psComp->SetTemplate(ps);
+			//	psComp->SetRelativeLocation(meshComp->GetSocketLocation(TEXT("AnimTrailSocket")));
+				psComp->SetRelativeRotation(FRotator::ZeroRotator);
+				psComp->AttachTo(meshComp, TEXT("AnimTrailSocket"));
+				psComp->RegisterComponent();
+			}
+			
 			meshComp->RegisterComponent();
 		}
 	}
