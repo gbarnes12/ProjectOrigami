@@ -75,8 +75,8 @@ void AOrbGroup::Tick(float deltaSeconds)
 	if (this->TravelledDistanceOnPath >= pathDistance)
 		this->TravelledDistanceOnPath = 0.0f;
 
-	FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
-	FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
+	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
+	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
 
 	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
 }
@@ -105,7 +105,7 @@ void AOrbGroup::GenerateOrbs()
 	if (!this->OrbsSceneComponent)
 		return;
 
-	FVector meshScale = FVector(0.2f, 0.2f, 0.2f);
+	const FVector meshScale = FVector(0.2f, 0.2f, 0.2f);
 
 	this->OrbsSceneComponent->SetRelativeLocation(FVector::ZeroVector);
 	this->OrbsSceneComponent->AttachTo(this->RootComponent);
@@ -129,15 +129,15 @@ void AOrbGroup::GenerateOrbs()
 
 
 	// create the area in which we want to spawn the orbs 
-	FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
+	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
 
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
 	for (uint16 i = 0; i < this->OrbCount; i++)
 	{
-		FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
-		FName fMeshName = FName(*staticMeshCompName);
-		FVector location = FMath::RandPointInBox(spawnBox);
+		const FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
+		const FName fMeshName = FName(*staticMeshCompName);
+		const FVector location = FMath::RandPointInBox(spawnBox);
 		//UE_LOG(LogTemp, Warning, TEXT("Location %f %f %f"), location.X, location.Y, location.Z);
 
 		// now we can create a static mesh component!
