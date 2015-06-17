@@ -26,6 +26,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
+	class USplineComponent* OrbPath;
+
 	UFUNCTION(BlueprintCallable, Category = TDLHelpers)
 	static FString GetCurrentLevel(AActor * sourceActor);
 

@@ -1,18 +1,14 @@
 #include "Origami.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Public/TimerManager.h"
+#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
+#include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "OrbGroup.h"
 
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	this->OrbSpeedLevel.Reserve(3);
-	this->OrbSpeedLevel.Add(100.0f);
-	this->OrbSpeedLevel.Add(160.0f);
-	this->OrbSpeedLevel.Add(240.0f);
-
 	this->TravelledDistanceOnPath = 0.0f;
-	this->MovementSpeed = OrbSpeedLevel[0];
 	this->Mode = EOrbMode::Swarm;
 	this->OrbCount = 20;
 	this->OrbColor = FColor::White;
@@ -21,6 +17,9 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->bIsGenerated = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
+
+	// The socket functions as 
+	this->Socket = NULL;
 
 	// Root Scene Component
 	this->RootSceneComponent = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -43,7 +42,19 @@ void AOrbGroup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	this->OrbPath->ResetRelativeTransform();
+	this->MovementSpeed = OrbSpeedLevel[0];
+
+	// retrieve the player and set him 
+	// this is just temporarily!
+	APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	this->Socket = playerController->GetPawn();
+	AOrigamiCharacter* origamiCharacter = Cast<AOrigamiCharacter>(this->Socket);
+	if (origamiCharacter) 
+	{
+		this->OrbPath = origamiCharacter->OrbPath;
+	}
+
+	this->AttachedType = EActorType::Player;
 
 	// GenerateOrbs only at runtime 
 	// if we do this within the constructor the editor becomes slow as fuck somehow?!
@@ -66,6 +77,40 @@ void AOrbGroup::Tick(float deltaSeconds)
 	if (!this->OrbsSceneComponent->IsValidLowLevelFast())
 		return;
 
+	if (this->AttachedType == EActorType::None)
+		return;
+
+	if (this->AttachedType == EActorType::Player)
+	{
+		this->FollowPath(deltaSeconds);
+	}
+	else if (this->AttachedType == EActorType::Path)
+	{
+		this->FollowPath(deltaSeconds);
+	}
+}
+
+void AOrbGroup::SimulateSwarm(float deltaSeconds)
+{
+	if (!this->Socket)
+		return;
+
+//	float speedAndTime = 30.0f * deltaSeconds;
+	//this->CurrentRotation = this->CurrentRotation + speedAndTime;
+	//FVector currentLocation = this->OrbsSceneComponent->GetComponentLocation();
+
+	const FVector socketLocation = this->Socket->GetActorLocation();
+	//FVector NewActorLocation = OrbsSceneComponent->GetComponentLocation().RotateAngleAxis(10.0f  * deltaSeconds, this->Socket->GetActorUpVector());
+	//NewActorLocation = NewActorLocation + socketLocation;
+
+
+	this->SetActorLocation(socketLocation);
+	//this->OrbsSceneComponent->SetWorldLocation(socketLocation);
+	//this->OrbsSceneComponent->SetWorldRotation(NewActorLocation.Rotation());
+}
+
+void AOrbGroup::FollowPath(float deltaSeconds) 
+{
 	if (!this->OrbPath)
 		return;
 
@@ -105,12 +150,12 @@ void AOrbGroup::GenerateOrbs()
 	if (!this->OrbsSceneComponent)
 		return;
 
-	const FVector meshScale = FVector(0.2f, 0.2f, 0.2f);
+	
+	const FVector meshScale = FVector(0.1f, 0.1f, 0.1f);
 
 	this->OrbsSceneComponent->SetRelativeLocation(FVector::ZeroVector);
 	this->OrbsSceneComponent->AttachTo(this->RootComponent);
 	this->OrbsSceneComponent->RegisterComponent();
-	this->OrbsSceneComponent->ResetRelativeTransform();
 
 	// load static mesh
 	this->OrbMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *this->OrbMeshFileName));
@@ -137,7 +182,8 @@ void AOrbGroup::GenerateOrbs()
 	}
 
 	// create the area in which we want to spawn the orbs 
-	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
+	const FBox spawnBox = FBox::BuildAABB(this->OrbsSceneComponent->GetRelativeTransform().GetLocation(), FVector(this->OrbSpawnBoxExtents));
+	UE_LOG(LogTemp, Error, TEXT("Component Location: %s"), *this->OrbsSceneComponent->GetRelativeTransform().GetLocation().ToCompactString());
 
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
@@ -152,12 +198,11 @@ void AOrbGroup::GenerateOrbs()
 		UStaticMeshComponent* meshComp = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), fMeshName);
 		if (meshComp) 
 		{
-			
 			meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			meshComp->SetStaticMesh(this->OrbMesh);
+			meshComp->SetStaticMesh(this->OrbMesh); 
 			meshComp->SetRelativeScale3D(meshScale);
-			meshComp->SetRelativeLocation(location);
-			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
+			meshComp->SetRelativeRotation(FRotator::ZeroRotator); 
+			meshComp->SetWorldLocation(location);
 			meshComp->AttachTo(this->OrbsSceneComponent);
 			
 			const FString particleSystemName = "PS_" + FString::FromInt(i);
@@ -177,6 +222,12 @@ void AOrbGroup::GenerateOrbs()
 		}
 	}
 
-	this->OrbsSceneComponent->SetWorldLocation(this->OrbPath->GetWorldLocationAtDistanceAlongSpline(0));
+	
 	this->bIsGenerated = true;
+}
+
+UStaticMeshSocket* AOrbGroup::GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName)
+{
+	UStaticMeshSocket* socket = StaticMesh->FindSocket(SocketName);
+	return socket;
 }

@@ -1,6 +1,7 @@
 // Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
 
 #include "Origami.h"
+#include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "OrigamiCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -40,6 +41,13 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
+	if (this->OrbPath)
+	{
+		this->OrbPath->AttachTo(this->RootComponent);
+		this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
+	}
 }
 
 

@@ -10,9 +10,15 @@ enum EOrbMode {
 	Attached = 2
 };
 
+enum EActorType {
+	None = 0,
+	Player = 1,
+	Path = 2,
+	Entity = 3
+};
 
 UCLASS(config = Game)
-class AOrbGroup : public AActor
+class ORIGAMI_API AOrbGroup : public AActor
 {
 	GENERATED_BODY()
 
@@ -37,10 +43,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
+	class AActor* Socket;
 
-	void BeginPlay();
-	void Tick(float deltaSeconds);
+	virtual void BeginPlay() override;
+	virtual void Tick(float deltaSeconds) override;
 
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Static Mesh Socket", Keywords = "static mesh socket"), Category = StaticMesh)
+	static UStaticMeshSocket* GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName);
+
+	
 private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
@@ -57,12 +69,19 @@ private:
 	struct FTimerHandle AdjustSpeedTimerHandle;
 
 	/* The mode this orb group is currently in. */
+	EActorType AttachedType;
 	EOrbMode Mode;
 	float MovementSpeed;
 	float TravelledDistanceOnPath;
 	bool bIsGenerated;
+	float CurrentRotation;
 
+	/* Construction of the orbs */
 	void GenerateOrbs();
+
+	/* Simulation Methods */
+	void FollowPath(float deltaSeconds);
+	void SimulateSwarm(float deltaSeconds);
 
 	/* Timer based event methods */
 	void AdjustSpeed();
