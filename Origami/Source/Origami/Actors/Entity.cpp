@@ -36,22 +36,22 @@ AEntity* AEntity::NewEntityFromString(AActor* Actor, const FString Path, const F
 		return nullptr;
 
 	FStringAssetReference  fileReference = "Blueprint'" + Path + Name + "'";
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *(fileReference.ToString()));
 
-	/*UObject* loadedObject = StaticLoadObject(UObject::StaticClass(), nullptr, *fileReference.ToString());
+	UObject* loadedObject = StaticLoadObject(UObject::StaticClass(), nullptr, *fileReference.ToString());
 	if (!IsValid(loadedObject))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Couldn't load file %s!"), *Name);
 		return nullptr;
-	}*/
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%i"), 1);
 
 	UBlueprint* entityBp = Cast<UBlueprint>(fileReference.ResolveObject());
 	if (IsValid(entityBp))
 	{
-		FActorSpawnParameters fp;
-		fp.bAllowDuringConstructionScript = true;
-
 		UWorld* world = Actor->GetWorld();
-		AEntity* entity = world->SpawnActor<AEntity>(entityBp->GeneratedClass, fp);
+		AEntity* entity = world->SpawnActor<AEntity>(entityBp->GeneratedClass);
 
 		if (IsValid(entity))
 		{
