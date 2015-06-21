@@ -8,16 +8,34 @@
 // Sets default values
 AEntity::AEntity()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	// Set the tag we need in this case Entity!
 	this->Tags.Add(TEXT("Entity"));
+	
+	// create a custom root scene component (this seems to cause less errors somehow
+	USceneComponent* rootSceneComp = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	if (IsValid(rootSceneComp))
+	{
+		rootSceneComp->RelativeLocation = FVector::ZeroVector;
+		this->RootComponent = rootSceneComp;
+	}
+
+	// Create trigger box 
+	// This can be used in order to check whether the player is within reach of the entity or not!
+	this->TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"), false);
+	if (IsValid(this->TriggerBox))
+	{
+		this->TriggerBox->AttachTo(this->RootComponent);
+		this->TriggerBox->RegisterComponent();
+	}
 }
 
 // Called when the game starts or when spawned
 void AEntity::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -51,7 +69,6 @@ AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FSt
 		return nullptr;
 
 	FStringAssetReference  fileReference = "Blueprint'" + Path + Name + "'";
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *(fileReference.ToString()));
 
 	UObject* loadedObject = StaticLoadObject(UObject::StaticClass(), nullptr, *fileReference.ToString());
 	if (!IsValid(loadedObject))
@@ -59,8 +76,6 @@ AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FSt
 		UE_LOG(LogTemp, Warning, TEXT("Couldn't load file %s!"), *Name);
 		return nullptr;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("%i"), 1);
 
 	UBlueprint* entityBp = Cast<UBlueprint>(fileReference.ResolveObject());
 	if (IsValid(entityBp))

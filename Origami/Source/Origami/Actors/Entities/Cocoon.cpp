@@ -10,10 +10,6 @@
 ACocoon::ACocoon()
 	: Super()
 {
-	USceneComponent* rootSceneComp = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
-	rootSceneComp->RelativeLocation = FVector::ZeroVector;
-	this->RootComponent = rootSceneComp;
-
 	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
 	if (this->OrbPath)
 	{

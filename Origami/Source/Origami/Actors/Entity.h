@@ -40,5 +40,8 @@ public:
 protected:
 	EMantleState State;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Entity, meta = (AllowPrivateAccess = "true"))
+	UBoxComponent* TriggerBox;
+
 	void Interact(AOrigamiCharacter* character); 
 };
