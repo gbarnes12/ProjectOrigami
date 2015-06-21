@@ -105,7 +105,6 @@ void AOrbGroup::BeginPlay()
 	// this is just temporarily!
 	//APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	//AttachSocket(playerController->GetPawn());
-	
 
 	// GenerateOrbs only at runtime 
 	// if we do this within the constructor the editor becomes slow as fuck somehow?!
@@ -114,7 +113,6 @@ void AOrbGroup::BeginPlay()
 	/*Start the timer that will adjust the speed over time*/
 	GetWorldTimerManager().ClearTimer(AdjustSpeedTimerHandle);
 	GetWorldTimerManager().SetTimer(AdjustSpeedTimerHandle, this, &AOrbGroup::AdjustSpeed, 5.0f, true);
-	UE_LOG(LogTemp, Warning, TEXT("Created timer"));
 }
 
 
@@ -180,7 +178,7 @@ void AOrbGroup::AdjustSpeed()
 	else if (this->MovementSpeed == OrbSpeedLevel[1])
 		this->MovementSpeed = OrbSpeedLevel[0];
 
-	UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
+	//UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
 }
 
 void AOrbGroup::GenerateOrbs()
@@ -194,12 +192,23 @@ void AOrbGroup::GenerateOrbs()
 	if (!this->OrbsSceneComponent)
 		return;
 
-	
 	const FVector meshScale = FVector(0.20f, 0.20f, 0.20f);
 
 	this->OrbsSceneComponent->SetRelativeLocation(FVector::ZeroVector);
 	this->OrbsSceneComponent->AttachTo(this->RootComponent);
 	this->OrbsSceneComponent->RegisterComponent();
+
+
+	UPointLightComponent* light = NewObject<UPointLightComponent>(this, UPointLightComponent::StaticClass(), TEXT("PointLight"));
+	if (light)
+	{
+		light->SetRelativeRotation(FRotator::ZeroRotator);
+		light->SetLightColor(FLinearColor::White);
+		light->SetAttenuationRadius(180.0f);
+		light->SetSourceRadius(400.0f);
+		light->AttachTo(OrbsSceneComponent);
+		light->RegisterComponent();
+	}
 
 	// load static mesh
 	this->OrbMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *this->OrbMeshFileName));
@@ -227,8 +236,7 @@ void AOrbGroup::GenerateOrbs()
 
 	// create the area in which we want to spawn the orbs 
 	const FBox spawnBox = FBox::BuildAABB(this->OrbsSceneComponent->GetRelativeTransform().GetLocation(), FVector(this->OrbSpawnBoxExtents));
-	UE_LOG(LogTemp, Error, TEXT("Component Location: %s"), *this->OrbsSceneComponent->GetRelativeTransform().GetLocation().ToCompactString());
-
+	
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
 	for (uint16 i = 0; i < this->OrbCount; i++)
@@ -236,8 +244,7 @@ void AOrbGroup::GenerateOrbs()
 		const FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
 		const FName fMeshName = FName(*staticMeshCompName);
 		const FVector location = FMath::RandPointInBox(spawnBox);
-		//UE_LOG(LogTemp, Warning, TEXT("Location %f %f %f"), location.X, location.Y, location.Z);
-
+	
 		// now we can create a static mesh component!
 		UStaticMeshComponent* meshComp = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), fMeshName);
 		if (meshComp) 
@@ -254,14 +261,11 @@ void AOrbGroup::GenerateOrbs()
 			UParticleSystemComponent* psComp = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass(), FName(*particleSystemName));
 			if (psComp) 
 			{
-				
 				psComp->SetTemplate(ps);
-			//	psComp->SetRelativeLocation(meshComp->GetSocketLocation(TEXT("AnimTrailSocket")));
 				psComp->SetRelativeRotation(FRotator::ZeroRotator);
 				psComp->AttachTo(meshComp, TEXT("AnimTrailSocket"));
 				psComp->RegisterComponent();
 			}
-			
 			meshComp->RegisterComponent();
 		}
 	}
