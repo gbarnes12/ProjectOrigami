@@ -3,6 +3,8 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Actors/Characters/Player/OrigamiCharacter.h"
+#include "Actors/Entities/Cocoon.h"
+#include "Actors/Entity.h"
 #include "OrbGroup.h"
 
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
@@ -12,7 +14,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->Mode = EOrbMode::Swarm;
 	this->OrbCount = 20;
 	this->OrbColor = FColor::White;
-	this->OrbSpawnBoxExtents = 40.0f;
+	this->OrbSpawnBoxExtents = 20.0f;
 
 	this->bIsGenerated = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
@@ -38,6 +40,61 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
+void AOrbGroup::AttachSocket(AActor* socket)
+{
+	if (!IsValid(socket))
+		return;
+	
+	this->AttachedType = EActorType::None;
+
+	if (socket->ActorHasTag(TEXT("Player"))) 
+	{
+		this->AttachedType = EActorType::Player;
+		this->Socket = socket;
+		const AOrigamiCharacter* player = Cast<AOrigamiCharacter>(this->Socket);
+		this->OrbPath = player->OrbPath;
+	} 
+	else if (socket->ActorHasTag(TEXT("Entity")))
+	{
+		this->Socket = socket;
+		this->AttachedType = EActorType::Entity;
+		
+		AEntity* entity = Cast<AEntity>(this->Socket);
+		if (!IsValid(entity)) {
+			DetachFromSocket();
+			return;
+		}
+
+		// make the entity visible if necessary!
+		entity->Dismantle();
+
+		// since we have different types of entities 
+		// we need to decide how we simulate the orbs!
+		if (entity->GetClass()->IsChildOf(ACocoon::StaticClass()))
+		{
+			const ACocoon* cocoon = Cast<ACocoon>(this->Socket);
+			this->OrbPath = cocoon->GetOrbPath();
+		}
+	} 
+	else if (socket->ActorHasTag(TEXT("OrbPath")))
+	{
+		this->Socket = socket;
+		this->AttachedType = EActorType::Path;
+	}
+
+	this->K2_AttachRootComponentToActor(this->Socket, NAME_None, EAttachLocation::Type::KeepWorldPosition);
+}
+
+void AOrbGroup::DetachFromSocket() 
+{
+	if (this->Socket == NULL)
+		return;
+	
+	this->DetachRootComponentFromParent(true);
+	this->Socket = NULL;
+	this->AttachedType = EActorType::None;
+}
+
 void AOrbGroup::BeginPlay()
 {
 	Super::BeginPlay();
@@ -46,15 +103,9 @@ void AOrbGroup::BeginPlay()
 
 	// retrieve the player and set him 
 	// this is just temporarily!
-	APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	this->Socket = playerController->GetPawn();
-	AOrigamiCharacter* origamiCharacter = Cast<AOrigamiCharacter>(this->Socket);
-	if (origamiCharacter) 
-	{
-		this->OrbPath = origamiCharacter->OrbPath;
-	}
-
-	this->AttachedType = EActorType::Player;
+	//APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	//AttachSocket(playerController->GetPawn());
+	
 
 	// GenerateOrbs only at runtime 
 	// if we do this within the constructor the editor becomes slow as fuck somehow?!
@@ -80,14 +131,7 @@ void AOrbGroup::Tick(float deltaSeconds)
 	if (this->AttachedType == EActorType::None)
 		return;
 
-	if (this->AttachedType == EActorType::Player)
-	{
-		this->FollowPath(deltaSeconds);
-	}
-	else if (this->AttachedType == EActorType::Path)
-	{
-		this->FollowPath(deltaSeconds);
-	}
+	this->FollowPath(deltaSeconds);
 }
 
 void AOrbGroup::SimulateSwarm(float deltaSeconds)
@@ -151,7 +195,7 @@ void AOrbGroup::GenerateOrbs()
 		return;
 
 	
-	const FVector meshScale = FVector(0.1f, 0.1f, 0.1f);
+	const FVector meshScale = FVector(0.20f, 0.20f, 0.20f);
 
 	this->OrbsSceneComponent->SetRelativeLocation(FVector::ZeroVector);
 	this->OrbsSceneComponent->AttachTo(this->RootComponent);
@@ -221,7 +265,6 @@ void AOrbGroup::GenerateOrbs()
 			meshComp->RegisterComponent();
 		}
 	}
-
 	
 	this->bIsGenerated = true;
 }

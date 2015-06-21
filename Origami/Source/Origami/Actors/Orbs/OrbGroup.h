@@ -49,6 +49,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
 
+	void AttachSocket(AActor* socket);
+	void DetachFromSocket();
+
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Static Mesh Socket", Keywords = "static mesh socket"), Category = StaticMesh)
 	static UStaticMeshSocket* GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName);
 
