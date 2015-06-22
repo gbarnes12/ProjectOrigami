@@ -12,13 +12,11 @@
 AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 { 
-
 	// Set target at null at first
 	Target = NULL;
 
 	// set that we aren't yet in interaction range!
 	bIsInInteractionRange = false;
-
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -52,12 +50,16 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
+	// Create a path on which the orbs can travel!
 	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
 	if (this->OrbPath)
 	{
 		this->OrbPath->AttachTo(this->RootComponent);
 		this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 	}
+
+	// now reserve space for the maximal number of orbs groups the player can posses!
+	this->Orbs.Reserve(3);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -65,19 +67,9 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 void AOrigamiCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GetWorldTimerManager().ClearTimer(this->FindAimTimeHandle);
+
 	GetWorldTimerManager().SetTimer(FindAimTimeHandle, this, &AOrigamiCharacter::FindAim, 0.2f, true);
-}
-
-
-void AOrigamiCharacter::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	if (!IsValid(this->Target))
-		return;
-
-
+	GetWorldTimerManager().SetTimer(IsWithinInteractionRangeHandle, this, &AOrigamiCharacter::CheckIfIsInInteractionRange, 0.3f, true);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -102,7 +94,7 @@ void AOrigamiCharacter::FindAim()
 	//Re-initialize hit info
 	FHitResult rvHit(ForceInit);
 
-	GetWorld()->LineTraceSingle(
+	GetWorld()->LineTraceSingleByChannel(
 		rvHit, //result
 		start, //start
 		end, //end
@@ -116,8 +108,7 @@ void AOrigamiCharacter::FindAim()
 		{
 			if (actor->IsA(AEntity::StaticClass())) 
 			{
-				UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 1.0f, 2.0f);
-
+				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 1.0f, 2.0f);
 				AEntity* entity = Cast<AEntity>(actor);
 				if (IsValid(entity) && entity->bIsInteractable) 
 				{
@@ -128,10 +119,39 @@ void AOrigamiCharacter::FindAim()
 		}
 	}
 
-	// Reset Target to NULL if we haven't found anything anymore.
-	Target = NULL;
+	// reset the target once we are more than 10000.0f cms away!
+	if (IsValid(this->Target))
+	{
+		FVector thisLocation = this->GetActorLocation();
+		FVector targetLocation = this->Target->GetActorLocation();
+
+		if (FVector::Dist(thisLocation, targetLocation) > 10000.0f)
+			Target = NULL;
+	}
 }
 
+void AOrigamiCharacter::CheckIfIsInInteractionRange()
+{
+	if (!IsValid(this->Target))
+		return;
+
+	FVector thisLocation = this->GetActorLocation();
+	FVector targetLocation = this->Target->GetActorLocation();
+
+	// is the player within 1.5 meters of the object?
+	if (FVector::Dist(thisLocation, targetLocation) <= 1200.0f)
+		this->bIsInInteractionRange = true;
+	else
+		this->bIsInInteractionRange = false;
+}
+
+void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
+{
+	if (Orbs.Num() >= 3)
+		return;
+
+	Orbs.Add(orbGroup);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -161,7 +181,10 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 
 void AOrigamiCharacter::Interact()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hallooo"));
+	if (this->bIsInInteractionRange) 
+	{
+		this->Target->Interact(this);
+	}
 }
 
 void AOrigamiCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)

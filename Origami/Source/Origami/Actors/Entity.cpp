@@ -42,7 +42,6 @@ AEntity::AEntity()
 void AEntity::BeginPlay()
 {
 	Super::BeginPlay();
-	UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->AimBox->GetComponentLocation(), this->AimBox->GetScaledBoxExtent(), FLinearColor::Blue, FRotator::ZeroRotator, 10.0f);
 }
 
 // Called every frame

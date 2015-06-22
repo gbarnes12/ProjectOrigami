@@ -25,5 +25,6 @@ protected:
 	class AOrbGroup* Orbs;
 
 public:
+	virtual void Interact(AOrigamiCharacter* player) override;
 	FORCEINLINE class USplineComponent* GetOrbPath() const { return this->OrbPath; }
 };

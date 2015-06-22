@@ -36,6 +36,9 @@ public:
 	// Call this whenever this entity should be mantled by ink!
 	void Mantle(); 
 
+	// Can be called whenever the player interacts with this entity (via Key Press: Interact).
+	virtual void Interact(AOrigamiCharacter* player);
+
 public:
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Entity from string", Keywords = "New Entity from string"), Category = Game)
@@ -49,6 +52,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Entity, meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* AimBox;
-
-	void Interact(AOrigamiCharacter* character); 
 };
