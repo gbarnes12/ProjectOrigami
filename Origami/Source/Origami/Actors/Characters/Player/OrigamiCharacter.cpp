@@ -141,8 +141,7 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	check(InputComponent);
 	InputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
-	//InputComponent->BindAction("Interaction", IE_Pressed, this, &ACharacter::Interact);
+	InputComponent->BindAction("Interact", IE_Pressed, this, &AOrigamiCharacter::Interact);
 
 	InputComponent->BindAxis("MoveForward", this, &AOrigamiCharacter::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOrigamiCharacter::MoveRight);
@@ -160,6 +159,10 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	InputComponent->BindTouch(IE_Released, this, &AOrigamiCharacter::TouchStopped);
 }
 
+void AOrigamiCharacter::Interact()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Hallooo"));
+}
 
 void AOrigamiCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
