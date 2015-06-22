@@ -8,6 +8,15 @@ class AOrigamiCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	/* Handle to the timer that will adjust the speed periodically */
+	struct FTimerHandle FindAimTimeHandle;
+
+	/* The current Aim we are looking at! */
+	class AEntity* Target;
+
+	/*Specifies if the player is within the necessary interaction range of an entity.*/
+	bool bIsInInteractionRange;
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -15,6 +24,7 @@ class AOrigamiCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
 public:
 	AOrigamiCharacter(const FObjectInitializer& ObjectInitializer);
 
@@ -26,9 +36,15 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
+	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
+	float IneractionRange;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
+public:
+	/*  */
 	UFUNCTION(BlueprintCallable, Category = TDLHelpers)
 	static FString GetCurrentLevel(AActor * sourceActor);
 
@@ -64,9 +80,19 @@ protected:
 	// End of APawn interface
 
 public:
+	/* Begin play */
+	virtual void BeginPlay() override;
+
+	/* Tick event */
+	virtual void Tick(float DeltaSeconds) override;
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+private:
+	/* Called every 0.2f seconds in order to find an active aim the player is looking at. */
+	void FindAim();
 };
 

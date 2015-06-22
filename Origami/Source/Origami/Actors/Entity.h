@@ -16,6 +16,10 @@ class ORIGAMI_API AEntity : public AActor
 {
 	GENERATED_BODY()
 	
+public:
+	UPROPERTY(EditAnywhere, Category = Visual)
+	bool bIsInteractable;
+
 public:	
 	// Sets default values for this actor's properties
 	AEntity();
@@ -32,16 +36,19 @@ public:
 	// Call this whenever this entity should be mantled by ink!
 	void Mantle(); 
 
+public:
+
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Entity from string", Keywords = "New Entity from string"), Category = Game)
 	static AEntity* NewEntityFromString(AActor* actor, const FString Path, const FString Name);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Actor from string", Keywords = "New Actor from string"), Category = Game)
 	static AActor* NewActorFromString(AActor* Actor, const FString Path, const FString Name);
+	
 protected:
 	EMantleState State;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Entity, meta = (AllowPrivateAccess = "true"))
-	UBoxComponent* TriggerBox;
+	UBoxComponent* AimBox;
 
 	void Interact(AOrigamiCharacter* character); 
 };

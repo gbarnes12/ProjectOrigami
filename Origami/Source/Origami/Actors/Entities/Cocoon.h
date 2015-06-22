@@ -17,12 +17,13 @@ public:
 	ACocoon();
 	virtual void BeginPlay() override;
 
-	USplineComponent* GetOrbPath() const;
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class AOrbGroup* Orbs;
+
+public:
+	FORCEINLINE class USplineComponent* GetOrbPath() const { return this->OrbPath; }
 };

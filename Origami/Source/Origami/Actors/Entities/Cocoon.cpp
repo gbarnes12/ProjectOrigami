@@ -7,9 +7,15 @@
 #include "Cocoon.h"
 
 
+///////////////////////////////////////////////////////////////////////////
+// ACocoon
 ACocoon::ACocoon()
 	: Super()
 {
+	// Set this to true since the player needs to be able to interact with us
+	this->bIsInteractable = true;
+
+	//  
 	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
 	if (this->OrbPath)
 	{
@@ -19,10 +25,8 @@ ACocoon::ACocoon()
 	}
 }
 
-USplineComponent* ACocoon::GetOrbPath() const
-{
-	return this->OrbPath;
-}
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Event
 
 void ACocoon::BeginPlay() 
 {
@@ -68,4 +72,3 @@ void ACocoon::BeginPlay()
 	this->Orbs->AttachSocket(this);
 }
 
-	

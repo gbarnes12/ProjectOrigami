@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Origami.h"
+
+#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Public/EngineUtils.h"
 #include "Entity.h"
 
@@ -24,11 +26,15 @@ AEntity::AEntity()
 
 	// Create trigger box 
 	// This can be used in order to check whether the player is within reach of the entity or not!
-	this->TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"), false);
-	if (IsValid(this->TriggerBox))
+	this->AimBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AimBox"));
+	if (IsValid(this->AimBox))
 	{
-		this->TriggerBox->AttachTo(this->RootComponent);
-		this->TriggerBox->RegisterComponent();
+		this->AimBox->SetRelativeLocation(FVector::ZeroVector);
+
+		FVector boxExtends = FVector(this->GetSimpleCollisionRadius()) * 2.2f;
+		boxExtends.Z = boxExtends.Z * 1.5f;
+		this->AimBox->SetBoxExtent(boxExtends);
+		this->AimBox->AttachTo(this->RootComponent);
 	}
 }
 
@@ -36,13 +42,14 @@ AEntity::AEntity()
 void AEntity::BeginPlay()
 {
 	Super::BeginPlay();
+	UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->AimBox->GetComponentLocation(), this->AimBox->GetScaledBoxExtent(), FLinearColor::Blue, FRotator::ZeroRotator, 10.0f);
 }
 
 // Called every frame
 void AEntity::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-
+	
 }
 
 

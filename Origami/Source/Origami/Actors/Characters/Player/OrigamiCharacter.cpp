@@ -2,6 +2,8 @@
 
 #include "Origami.h"
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
+#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Origami/Actors/Entity.h"
 #include "OrigamiCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -10,6 +12,14 @@
 AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 { 
+
+	// Set target at null at first
+	Target = NULL;
+
+	// set that we aren't yet in interaction range!
+	bIsInInteractionRange = false;
+
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -50,27 +60,86 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	}
 }
 
-
-FString AOrigamiCharacter::GetCurrentLevel(AActor * sourceActor)
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Events
+void AOrigamiCharacter::BeginPlay()
 {
-	if (sourceActor == NULL)
+	GetWorldTimerManager().ClearTimer(this->FindAimTimeHandle);
+	GetWorldTimerManager().SetTimer(FindAimTimeHandle, this, &AOrigamiCharacter::FindAim, 0.2f, true);
+}
+
+
+void AOrigamiCharacter::Tick(float DeltaSeconds)
+{
+	if (!IsValid(this->Target))
+		return;
+
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+/// Gameplay
+void AOrigamiCharacter::FindAim()
+{
+	FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
+	FRotator cameraRotation = this->GetFollowCamera()->GetComponentRotation();
+
+	this->GetActorEyesViewPoint(cameraLocation, cameraRotation);
+
+	FVector start = cameraLocation;
+
+	// calculate end within the next 1000 cms
+	FVector end = cameraLocation + (cameraRotation.Vector() * 1000.0f);
+
+	FCollisionQueryParams rvTraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, this);
+	rvTraceParams.bTraceComplex = false; // we don't need complex collision for this trace since we only want to check if we 
+	rvTraceParams.bTraceAsyncScene = true;
+	rvTraceParams.bReturnPhysicalMaterial = false;
+
+	//Re-initialize hit info
+	FHitResult rvHit(ForceInit);
+
+	GetWorld()->LineTraceSingle(
+		rvHit, //result
+		start, //start
+		end, //end
+		ECollisionChannel::ECC_Visibility, //collision channel
+		rvTraceParams);
+
+	if (rvHit.bBlockingHit) 
 	{
-		return FString(TEXT("Must have a sourceActor (was NULL)"));
+		AActor* actor = rvHit.GetActor();
+		if (IsValid(actor))
+		{
+			if (actor->IsA(AEntity::StaticClass())) 
+			{
+				UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 1.0f, 2.0f);
+
+				AEntity* entity = Cast<AEntity>(actor);
+				if (IsValid(entity) && entity->bIsInteractable) 
+				{
+					this->Target = entity;
+					return;
+				}
+			}
+		}
 	}
 
-	return sourceActor->GetWorld()->GetMapName();
+	// Reset Target to NULL if we haven't found anything anymore.
+	Target = NULL;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 // Input
-
 void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	// Set up gameplay key bindings
 	check(InputComponent);
 	InputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	//InputComponent->BindAction("Interaction", IE_Pressed, this, &ACharacter::Interact);
 
 	InputComponent->BindAxis("MoveForward", this, &AOrigamiCharacter::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOrigamiCharacter::MoveRight);
@@ -145,4 +214,17 @@ void AOrigamiCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+// Static Blueprint Methods
+FString AOrigamiCharacter::GetCurrentLevel(AActor * sourceActor)
+{
+	if (sourceActor == NULL)
+	{
+		return FString(TEXT("Must have a sourceActor (was NULL)"));
+	}
+
+	return sourceActor->GetWorld()->GetMapName();
 }

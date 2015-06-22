@@ -7,6 +7,9 @@
 #include "Actors/Entity.h"
 #include "OrbGroup.h"
 
+///////////////////////////////////////////////////////////////////////////
+// AOrbGroup
+
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -40,60 +43,8 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-void AOrbGroup::AttachSocket(AActor* socket)
-{
-	if (!IsValid(socket))
-		return;
-	
-	this->AttachedType = EActorType::None;
-
-	if (socket->ActorHasTag(TEXT("Player"))) 
-	{
-		this->AttachedType = EActorType::Player;
-		this->Socket = socket;
-		const AOrigamiCharacter* player = Cast<AOrigamiCharacter>(this->Socket);
-		this->OrbPath = player->OrbPath;
-	} 
-	else if (socket->ActorHasTag(TEXT("Entity")))
-	{
-		this->Socket = socket;
-		this->AttachedType = EActorType::Entity;
-		
-		AEntity* entity = Cast<AEntity>(this->Socket);
-		if (!IsValid(entity)) {
-			DetachFromSocket();
-			return;
-		}
-
-		// make the entity visible if necessary!
-		entity->Dismantle();
-
-		// since we have different types of entities 
-		// we need to decide how we simulate the orbs!
-		if (entity->GetClass()->IsChildOf(ACocoon::StaticClass()))
-		{
-			const ACocoon* cocoon = Cast<ACocoon>(this->Socket);
-			this->OrbPath = cocoon->GetOrbPath();
-		}
-	} 
-	else if (socket->ActorHasTag(TEXT("OrbPath")))
-	{
-		this->Socket = socket;
-		this->AttachedType = EActorType::Path;
-	}
-
-	this->K2_AttachRootComponentToActor(this->Socket, NAME_None, EAttachLocation::Type::KeepWorldPosition);
-}
-
-void AOrbGroup::DetachFromSocket() 
-{
-	if (this->Socket == NULL)
-		return;
-	
-	this->DetachRootComponentFromParent(true);
-	this->Socket = NULL;
-	this->AttachedType = EActorType::None;
-}
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Events
 
 void AOrbGroup::BeginPlay()
 {
@@ -132,54 +83,9 @@ void AOrbGroup::Tick(float deltaSeconds)
 	this->FollowPath(deltaSeconds);
 }
 
-void AOrbGroup::SimulateSwarm(float deltaSeconds)
-{
-	if (!this->Socket)
-		return;
 
-//	float speedAndTime = 30.0f * deltaSeconds;
-	//this->CurrentRotation = this->CurrentRotation + speedAndTime;
-	//FVector currentLocation = this->OrbsSceneComponent->GetComponentLocation();
-
-	const FVector socketLocation = this->Socket->GetActorLocation();
-	//FVector NewActorLocation = OrbsSceneComponent->GetComponentLocation().RotateAngleAxis(10.0f  * deltaSeconds, this->Socket->GetActorUpVector());
-	//NewActorLocation = NewActorLocation + socketLocation;
-
-
-	this->SetActorLocation(socketLocation);
-	//this->OrbsSceneComponent->SetWorldLocation(socketLocation);
-	//this->OrbsSceneComponent->SetWorldRotation(NewActorLocation.Rotation());
-}
-
-void AOrbGroup::FollowPath(float deltaSeconds) 
-{
-	if (!this->OrbPath)
-		return;
-
-	float pathDistance = this->OrbPath->GetSplineLength();
-	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, this->MovementSpeed);
-
-	if (this->TravelledDistanceOnPath >= pathDistance)
-		this->TravelledDistanceOnPath = 0.0f;
-
-	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
-	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
-
-	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
-}
-
-void AOrbGroup::AdjustSpeed() 
-{
-
-	if (this->MovementSpeed == OrbSpeedLevel[0])
-		this->MovementSpeed = OrbSpeedLevel[2];
-	else if (this->MovementSpeed == OrbSpeedLevel[2])
-		this->MovementSpeed = OrbSpeedLevel[1];
-	else if (this->MovementSpeed == OrbSpeedLevel[1])
-		this->MovementSpeed = OrbSpeedLevel[0];
-
-	//UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
-}
+///////////////////////////////////////////////////////////////////////////
+// Construction
 
 void AOrbGroup::GenerateOrbs()
 {
@@ -236,7 +142,7 @@ void AOrbGroup::GenerateOrbs()
 
 	// create the area in which we want to spawn the orbs 
 	const FBox spawnBox = FBox::BuildAABB(this->OrbsSceneComponent->GetRelativeTransform().GetLocation(), FVector(this->OrbSpawnBoxExtents));
-	
+
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
 	for (uint16 i = 0; i < this->OrbCount; i++)
@@ -244,22 +150,22 @@ void AOrbGroup::GenerateOrbs()
 		const FString staticMeshCompName = "Orb_" + FString::FromInt(i) + "_Mesh";
 		const FName fMeshName = FName(*staticMeshCompName);
 		const FVector location = FMath::RandPointInBox(spawnBox);
-	
+
 		// now we can create a static mesh component!
 		UStaticMeshComponent* meshComp = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), fMeshName);
-		if (meshComp) 
+		if (meshComp)
 		{
 			meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			meshComp->SetStaticMesh(this->OrbMesh); 
+			meshComp->SetStaticMesh(this->OrbMesh);
 			meshComp->SetRelativeScale3D(meshScale);
-			meshComp->SetRelativeRotation(FRotator::ZeroRotator); 
+			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
 			meshComp->SetWorldLocation(location);
 			meshComp->AttachTo(this->OrbsSceneComponent);
-			
+
 			const FString particleSystemName = "PS_" + FString::FromInt(i);
 
 			UParticleSystemComponent* psComp = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass(), FName(*particleSystemName));
-			if (psComp) 
+			if (psComp)
 			{
 				psComp->SetTemplate(ps);
 				psComp->SetRelativeRotation(FRotator::ZeroRotator);
@@ -269,9 +175,124 @@ void AOrbGroup::GenerateOrbs()
 			meshComp->RegisterComponent();
 		}
 	}
-	
+
 	this->bIsGenerated = true;
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+// Socket Methods
+
+void AOrbGroup::AttachSocket(AActor* socket)
+{
+	if (!IsValid(socket))
+		return;
+	
+	this->AttachedType = EActorType::None;
+
+	if (socket->ActorHasTag(TEXT("Player"))) 
+	{
+		this->AttachedType = EActorType::Player;
+		this->Socket = socket;
+		const AOrigamiCharacter* player = Cast<AOrigamiCharacter>(this->Socket);
+		this->OrbPath = player->OrbPath;
+	} 
+	else if (socket->ActorHasTag(TEXT("Entity")))
+	{
+		this->Socket = socket;
+		this->AttachedType = EActorType::Entity;
+		
+		AEntity* entity = Cast<AEntity>(this->Socket);
+		if (!IsValid(entity)) {
+			DetachFromSocket();
+			return;
+		}
+
+		// make the entity visible if necessary!
+		entity->Dismantle();
+
+		// since we have different types of entities 
+		// we need to decide how we simulate the orbs!
+		if (entity->GetClass()->IsChildOf(ACocoon::StaticClass()))
+		{
+			const ACocoon* cocoon = Cast<ACocoon>(this->Socket);
+			this->OrbPath = cocoon->GetOrbPath();
+		}
+	} 
+	else if (socket->ActorHasTag(TEXT("OrbPath")))
+	{
+		this->Socket = socket;
+		this->AttachedType = EActorType::Path;
+	}
+
+	this->K2_AttachRootComponentToActor(this->Socket, NAME_None, EAttachLocation::Type::KeepWorldPosition);
+}
+
+void AOrbGroup::DetachFromSocket() 
+{
+	if (this->Socket == NULL)
+		return;
+	
+	this->DetachRootComponentFromParent(true);
+	this->Socket = NULL;
+	this->AttachedType = EActorType::None;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+// Simulation Methods
+
+void AOrbGroup::SimulateSwarm(float deltaSeconds)
+{
+	if (!this->Socket)
+		return;
+
+//	float speedAndTime = 30.0f * deltaSeconds;
+	//this->CurrentRotation = this->CurrentRotation + speedAndTime;
+	//FVector currentLocation = this->OrbsSceneComponent->GetComponentLocation();
+
+	const FVector socketLocation = this->Socket->GetActorLocation();
+	//FVector NewActorLocation = OrbsSceneComponent->GetComponentLocation().RotateAngleAxis(10.0f  * deltaSeconds, this->Socket->GetActorUpVector());
+	//NewActorLocation = NewActorLocation + socketLocation;
+
+
+	this->SetActorLocation(socketLocation);
+	//this->OrbsSceneComponent->SetWorldLocation(socketLocation);
+	//this->OrbsSceneComponent->SetWorldRotation(NewActorLocation.Rotation());
+}
+
+void AOrbGroup::FollowPath(float deltaSeconds) 
+{
+	if (!this->OrbPath)
+		return;
+
+	float pathDistance = this->OrbPath->GetSplineLength();
+	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, this->MovementSpeed);
+
+	if (this->TravelledDistanceOnPath >= pathDistance)
+		this->TravelledDistanceOnPath = 0.0f;
+
+	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
+	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
+
+	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
+}
+
+void AOrbGroup::AdjustSpeed() 
+{
+
+	if (this->MovementSpeed == OrbSpeedLevel[0])
+		this->MovementSpeed = OrbSpeedLevel[2];
+	else if (this->MovementSpeed == OrbSpeedLevel[2])
+		this->MovementSpeed = OrbSpeedLevel[1];
+	else if (this->MovementSpeed == OrbSpeedLevel[1])
+		this->MovementSpeed = OrbSpeedLevel[0];
+
+	//UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Static Methods
 
 UStaticMeshSocket* AOrbGroup::GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName)
 {

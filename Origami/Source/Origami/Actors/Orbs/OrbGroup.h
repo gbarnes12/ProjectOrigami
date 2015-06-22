@@ -46,16 +46,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class AActor* Socket;
 
+public:
+	/*UE4 Native Events*/
 	virtual void BeginPlay() override;
+
+	/*UE4 Native Event*/
 	virtual void Tick(float deltaSeconds) override;
 
+	/*Attach a new socket to the orb group!*/
 	void AttachSocket(AActor* socket);
+
+	/*Detach from socket. */
 	void DetachFromSocket();
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Static Mesh Socket", Keywords = "static mesh socket"), Category = StaticMesh)
 	static UStaticMeshSocket* GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName);
 
-	
 private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
@@ -71,14 +77,25 @@ private:
 	/* Handle to the timer that will adjust the speed periodically */
 	struct FTimerHandle AdjustSpeedTimerHandle;
 
-	/* The mode this orb group is currently in. */
+	/* To which actor are we attached? Entity, Player or OrbPath? */
 	EActorType AttachedType;
+	
+	/* In which mode are we. This determines the simulation */
 	EOrbMode Mode;
+
+	/*How fast are we currently moving.*/
 	float MovementSpeed;
+	
+	/*How much of the path have we already travelled?*/
 	float TravelledDistanceOnPath;
+	
+	/*Are we finished generating*/
 	bool bIsGenerated;
+
+	/*Which is the current rotation?*/
 	float CurrentRotation;
 
+private:
 	/* Construction of the orbs */
 	void GenerateOrbs();
 
