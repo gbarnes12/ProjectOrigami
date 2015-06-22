@@ -64,6 +64,7 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 // UE4 Native Events
 void AOrigamiCharacter::BeginPlay()
 {
+	Super::BeginPlay();
 	GetWorldTimerManager().ClearTimer(this->FindAimTimeHandle);
 	GetWorldTimerManager().SetTimer(FindAimTimeHandle, this, &AOrigamiCharacter::FindAim, 0.2f, true);
 }
@@ -71,6 +72,8 @@ void AOrigamiCharacter::BeginPlay()
 
 void AOrigamiCharacter::Tick(float DeltaSeconds)
 {
+	Super::Tick(DeltaSeconds);
+
 	if (!IsValid(this->Target))
 		return;
 
