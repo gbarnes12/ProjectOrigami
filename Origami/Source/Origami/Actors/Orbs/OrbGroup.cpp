@@ -4,6 +4,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "Actors/Entities/Cocoon.h"
+#include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 #include "Actors/Entity.h"
 #include "OrbGroup.h"
 
@@ -14,7 +15,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	this->TravelledDistanceOnPath = 0.0f;
-	this->Mode = EOrbMode::Swarm;
+	this->Mode = EOrbMode::FreeRoam;
 	this->OrbCount = 20;
 	this->OrbColor = FColor::White;
 	this->OrbSpawnBoxExtents = 20.0f;
@@ -41,6 +42,12 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 			this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 		}
 	}
+
+	FOnTimelineFloat progressFunction;
+	progressFunction.BindUFunction(this, TEXT("MoveToTarget"));
+	const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("CurveFloat'/Game/Origami/Data/LinearMovementCurve.LinearMovementCurve'"));
+	this->MovementTimeline.AddInterpFloat(Curve.Object, progressFunction, TEXT("TEST"));
+	
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -77,10 +84,15 @@ void AOrbGroup::Tick(float deltaSeconds)
 	if (!this->OrbsSceneComponent->IsValidLowLevelFast())
 		return;
 
-	if (this->AttachedType == EActorType::None)
-		return;
-
-	this->FollowPath(deltaSeconds);
+	switch(this->Mode)
+	{
+	case EOrbMode::Attached:
+		this->SimulateAttachment(deltaSeconds);
+		break;
+	case EOrbMode::FreeRoam:
+		this->SimulateRoaming(deltaSeconds);
+		break;
+	}
 }
 
 
@@ -110,6 +122,7 @@ void AOrbGroup::GenerateOrbs()
 	{
 		light->SetRelativeRotation(FRotator::ZeroRotator);
 		light->SetLightColor(FLinearColor::White);
+		light->SetIntensity(800.0f);
 		light->SetAttenuationRadius(180.0f);
 		light->SetSourceRadius(400.0f);
 		light->AttachTo(OrbsSceneComponent);
@@ -179,6 +192,52 @@ void AOrbGroup::GenerateOrbs()
 	this->bIsGenerated = true;
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Timeline Methods
+
+void AOrbGroup::MoveToTarget(float value)
+{
+	FVector currentPosition = FMath::Lerp(TargetInfo.StartLocation, TargetInfo.TargetLocation, value);
+	FRotator currentRotation = UKismetMathLibrary::FindLookAtRotation(currentPosition, TargetInfo.TargetLocation);
+	this->OrbsSceneComponent->SetWorldLocation(currentPosition);
+	this->OrbsSceneComponent->SetWorldRotation(currentRotation);
+	
+	if (value >= 1.0f)
+	{
+		// in case we want to attach this object to the target at the end 
+		// do it!
+		if (TargetInfo.bAttachToTargetAtEnd)
+			this->AttachSocket(TargetInfo.Target);
+
+		// clear the target information
+		TargetInfo.bAttachToTargetAtEnd = false;
+		TargetInfo.StartLocation = FVector::ZeroVector;
+		TargetInfo.TargetLocation = FVector::ZeroVector;
+		TargetInfo.Target = NULL;
+
+		this->MovementTimeline.Stop();
+	}
+}
+
+void AOrbGroup::StartMoveToTarget(AActor* target, bool bAttachToTargetAtEnd)
+{
+	this->StartMoveToTarget(target, target->GetActorLocation(), bAttachToTargetAtEnd);
+}
+
+void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttachToTargetAtEnd)
+{
+	if (!IsValid(target))
+		return;
+
+	// we detach the orb group from the socket first.
+	DetachFromSocket();
+
+	TargetInfo.Target = target;
+	TargetInfo.TargetLocation = location;
+	TargetInfo.StartLocation = this->OrbsSceneComponent->GetComponentLocation();
+	TargetInfo.bAttachToTargetAtEnd = bAttachToTargetAtEnd;
+	MovementTimeline.PlayFromStart();
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // Socket Methods
@@ -196,6 +255,11 @@ void AOrbGroup::AttachSocket(AActor* socket)
 		this->Socket = socket;
 		const AOrigamiCharacter* player = Cast<AOrigamiCharacter>(this->Socket);
 		this->OrbPath = player->OrbPath;
+
+		
+		this->OrbSpeedLevel[0] = 100;
+		this->OrbSpeedLevel[1] = 120;
+		this->OrbSpeedLevel[2] = 140;
 	} 
 	else if (socket->ActorHasTag(TEXT("Entity")))
 	{
@@ -226,6 +290,10 @@ void AOrbGroup::AttachSocket(AActor* socket)
 	}
 
 	this->K2_AttachRootComponentToActor(this->Socket, NAME_None, EAttachLocation::Type::KeepWorldPosition);
+	this->TravelledDistanceOnPath = 0.0f;
+	this->CurrentRotation = 0.0f;
+	this->MovementSpeed = this->OrbSpeedLevel[0];
+	this->Mode = EOrbMode::Attached;
 }
 
 void AOrbGroup::DetachFromSocket() 
@@ -236,29 +304,29 @@ void AOrbGroup::DetachFromSocket()
 	this->DetachRootComponentFromParent(true);
 	this->Socket = NULL;
 	this->AttachedType = EActorType::None;
+	this->Mode = EOrbMode::FreeRoam;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 // Simulation Methods
 
-void AOrbGroup::SimulateSwarm(float deltaSeconds)
+void AOrbGroup::SimulateRoaming(float deltaSeconds)
+{
+	// Tick the timeline in case we use it :)
+	if (this->MovementTimeline.IsPlaying()) 
+		this->MovementTimeline.TickTimeline(deltaSeconds);
+}
+
+void AOrbGroup::SimulateAttachment(float deltaSeconds)
 {
 	if (!this->Socket)
 		return;
 
-//	float speedAndTime = 30.0f * deltaSeconds;
-	//this->CurrentRotation = this->CurrentRotation + speedAndTime;
-	//FVector currentLocation = this->OrbsSceneComponent->GetComponentLocation();
+	if (this->AttachedType == EActorType::None)
+		return;
 
-	const FVector socketLocation = this->Socket->GetActorLocation();
-	//FVector NewActorLocation = OrbsSceneComponent->GetComponentLocation().RotateAngleAxis(10.0f  * deltaSeconds, this->Socket->GetActorUpVector());
-	//NewActorLocation = NewActorLocation + socketLocation;
-
-
-	this->SetActorLocation(socketLocation);
-	//this->OrbsSceneComponent->SetWorldLocation(socketLocation);
-	//this->OrbsSceneComponent->SetWorldRotation(NewActorLocation.Rotation());
+	this->FollowPath(deltaSeconds);
 }
 
 void AOrbGroup::FollowPath(float deltaSeconds) 

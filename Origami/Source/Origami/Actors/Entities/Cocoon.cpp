@@ -59,7 +59,6 @@ void ACocoon::BeginPlay()
 	this->OrbPath->ResetRelativeTransform();
 	this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 
-
 	// Now we need to spawn the OrbGroup :)
 	AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"));
 	if (!IsValid(orbGroup)) 
@@ -72,3 +71,16 @@ void ACocoon::BeginPlay()
 	this->Orbs->AttachSocket(this);
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Gameplay
+
+void ACocoon::Interact(AOrigamiCharacter* player)
+{
+	if (!IsValid(this->Orbs))
+		return;
+
+	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true);
+	//this->Orbs->AttachSocket(player);
+	player->AddOrbGroup(this->Orbs);
+	this->Orbs = NULL;
+}

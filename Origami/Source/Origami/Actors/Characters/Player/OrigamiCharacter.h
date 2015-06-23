@@ -11,11 +11,17 @@ class AOrigamiCharacter : public ACharacter
 	/* Handle to the timer that will adjust the speed periodically */
 	struct FTimerHandle FindAimTimeHandle;
 
+	/* Is the player within the interaction range? */
+	struct FTimerHandle IsWithinInteractionRangeHandle;
+
 	/* The current Aim we are looking at! */
 	class AEntity* Target;
 
 	/*Specifies if the player is within the necessary interaction range of an entity.*/
 	bool bIsInInteractionRange;
+
+	/*The Orbs the player currently posseses*/
+	TArray<class AOrbGroup*> Orbs;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -86,16 +92,21 @@ public:
 	/* Begin play */
 	virtual void BeginPlay() override;
 
-	/* Tick event */
-	virtual void Tick(float DeltaSeconds) override;
+
+	/*  */
+	void AddOrbGroup(AOrbGroup* orbGroup);
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 private:
 	/* Called every 0.2f seconds in order to find an active aim the player is looking at. */
 	void FindAim();
+	
+	/*Will check whether the player is within the interaction range of a target or not!*/
+	void CheckIfIsInInteractionRange();
 };
 
