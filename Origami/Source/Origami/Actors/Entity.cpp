@@ -4,6 +4,7 @@
 
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Public/EngineUtils.h"
+#include "OrigamiGameMode.h"
 #include "Entity.h"
 
 
@@ -69,31 +70,26 @@ void AEntity::Mantle()
 
 AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FString Name)
 {
-	TArray<UObject*> LoadedObjects;
-
 	if (!Actor)
 		return nullptr;
 
-	FStringAssetReference  fileReference = "Blueprint'" + Path + Name + "'";
-
-	UObject* loadedObject = StaticLoadObject(UObject::StaticClass(), nullptr, *fileReference.ToString());
-	if (!IsValid(loadedObject))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Couldn't load file %s!"), *Name);
+	FStringAssetReference fileReference(Path + Name);
+	
+	AOrigamiGameMode* mode = (AOrigamiGameMode*)Actor->GetWorld()->GetAuthGameMode();
+	if (!IsValid(mode))
 		return nullptr;
-	}
 
-	UBlueprint* entityBp = Cast<UBlueprint>(fileReference.ResolveObject());
-	if (IsValid(entityBp))
+	UBlueprint* objectFinder = *mode->ConstructorStatics.Objects.Find(FName(*fileReference.ToString()));
+	if (!objectFinder)
+		return nullptr;
+
+	UWorld* world = Actor->GetWorld();
+	AActor* actor = world->SpawnActor<AActor>(objectFinder->GeneratedClass);
+
+	if (IsValid(actor))
 	{
-		UWorld* world = Actor->GetWorld();
-		AActor* actor = world->SpawnActor<AActor>(entityBp->GeneratedClass);
-
-		if (IsValid(actor))
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("Couldn't create entity %s!"), *Name);
-			return actor;
-		}
+		//UE_LOG(LogTemp, Warning, TEXT("Couldn't create entity %s!"), *Name);
+		return actor;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Couldn't create blueprint %s!"), *Name);
