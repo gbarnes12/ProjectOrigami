@@ -51,9 +51,6 @@ public:
 	float OrbSpawnBoxExtents;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
-	class USplineComponent* OrbPath;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class AActor* Socket;
 
 public:
@@ -80,8 +77,8 @@ private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
 
-	/* This component holds all the orbs and is used to move them as a unit. */
-	class USceneComponent* OrbsSceneComponent;
+	/* This is used as a temporary reference to the path we're attached to! */
+	class USplineComponent* OrbPath;
 
 	/* Pointer to the static mesh we use for the orb mesh */
 	class UStaticMesh* OrbMesh;

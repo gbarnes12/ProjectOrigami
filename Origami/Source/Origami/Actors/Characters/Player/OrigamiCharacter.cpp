@@ -162,6 +162,8 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	InputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	InputComponent->BindAction("Interact", IE_Pressed, this, &AOrigamiCharacter::Interact);
+	InputComponent->BindAction("Walk", IE_Pressed, this, &AOrigamiCharacter::Walk);
+	InputComponent->BindAction("Walk", IE_Released, this, &AOrigamiCharacter::StopWalking);
 
 	InputComponent->BindAxis("MoveForward", this, &AOrigamiCharacter::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOrigamiCharacter::MoveRight);
@@ -177,6 +179,16 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	// handle touch devices
 	InputComponent->BindTouch(IE_Pressed, this, &AOrigamiCharacter::TouchStarted);
 	InputComponent->BindTouch(IE_Released, this, &AOrigamiCharacter::TouchStopped);
+}
+
+void AOrigamiCharacter::Walk()
+{
+	this->GetCharacterMovement()->MaxWalkSpeed = 300;
+}
+
+void AOrigamiCharacter::StopWalking()
+{
+	this->GetCharacterMovement()->MaxWalkSpeed = 600;
 }
 
 void AOrigamiCharacter::Interact()

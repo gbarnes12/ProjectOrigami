@@ -32,17 +32,6 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->RootSceneComponent->RelativeLocation = FVector::ZeroVector;
 	this->RootComponent = this->RootSceneComponent;
 
-	if (this->RootSceneComponent)
-	{
-		// Spline Component
-		this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
-		if (this->OrbPath)
-		{
-			this->OrbPath->AttachTo(this->RootComponent);
-			this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
-		}
-	}
-
 	FOnTimelineFloat progressFunction;
 	progressFunction.BindUFunction(this, TEXT("MoveToTarget"));
 	const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("CurveFloat'/Game/Origami/Data/LinearMovementCurve.LinearMovementCurve'"));
@@ -81,9 +70,6 @@ void AOrbGroup::Tick(float deltaSeconds)
 	//UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->RootComponent->GetComponentLocation(), FVector(200), FLinearColor::Red, FRotator::ZeroRotator, 0.1f);
 	//UKismetSystemLibrary::DrawDebugBox(GetWorld(), this->BoxSceneComponent->GetComponentLocation(), this->BoxSceneComponent->GetUnscaledBoxExtent(), FLinearColor::Blue, FRotator::ZeroRotator, 0.1f);
 
-	if (!this->OrbsSceneComponent->IsValidLowLevelFast())
-		return;
-
 	switch(this->Mode)
 	{
 	case EOrbMode::Attached:
@@ -106,16 +92,7 @@ void AOrbGroup::GenerateOrbs()
 	if (this->bIsGenerated)
 		return;
 
-	this->OrbsSceneComponent = NewObject<USceneComponent>(this, USceneComponent::StaticClass(), TEXT("Orbs"));
-	if (!this->OrbsSceneComponent)
-		return;
-
 	const FVector meshScale = FVector(0.20f, 0.20f, 0.20f);
-
-	this->OrbsSceneComponent->SetRelativeLocation(FVector::ZeroVector);
-	this->OrbsSceneComponent->AttachTo(this->RootComponent);
-	this->OrbsSceneComponent->RegisterComponent();
-
 
 	UPointLightComponent* light = NewObject<UPointLightComponent>(this, UPointLightComponent::StaticClass(), TEXT("PointLight"));
 	if (light)
@@ -125,7 +102,7 @@ void AOrbGroup::GenerateOrbs()
 		light->SetIntensity(800.0f);
 		light->SetAttenuationRadius(180.0f);
 		light->SetSourceRadius(400.0f);
-		light->AttachTo(OrbsSceneComponent);
+		light->AttachTo(this->RootComponent);
 		light->RegisterComponent();
 	}
 
@@ -154,7 +131,7 @@ void AOrbGroup::GenerateOrbs()
 	}
 
 	// create the area in which we want to spawn the orbs 
-	const FBox spawnBox = FBox::BuildAABB(this->OrbsSceneComponent->GetRelativeTransform().GetLocation(), FVector(this->OrbSpawnBoxExtents));
+	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
 
 	// we know how many orbs we need to create upfront 
 	// so we can reserve the memory on the initial creation!
@@ -173,7 +150,7 @@ void AOrbGroup::GenerateOrbs()
 			meshComp->SetRelativeScale3D(meshScale);
 			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
 			meshComp->SetWorldLocation(location);
-			meshComp->AttachTo(this->OrbsSceneComponent);
+			meshComp->AttachTo(this->RootComponent);
 
 			const FString particleSystemName = "PS_" + FString::FromInt(i);
 
@@ -199,8 +176,7 @@ void AOrbGroup::MoveToTarget(float value)
 {
 	FVector currentPosition = FMath::Lerp(TargetInfo.StartLocation, TargetInfo.TargetLocation, value);
 	FRotator currentRotation = UKismetMathLibrary::FindLookAtRotation(currentPosition, TargetInfo.TargetLocation);
-	this->OrbsSceneComponent->SetWorldLocation(currentPosition);
-	this->OrbsSceneComponent->SetWorldRotation(currentRotation);
+	this->SetActorLocationAndRotation(currentPosition, currentRotation);
 	
 	if (value >= 1.0f)
 	{
@@ -234,7 +210,7 @@ void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttach
 
 	TargetInfo.Target = target;
 	TargetInfo.TargetLocation = location;
-	TargetInfo.StartLocation = this->OrbsSceneComponent->GetComponentLocation();
+	TargetInfo.StartLocation = this->GetActorLocation();
 	TargetInfo.bAttachToTargetAtEnd = bAttachToTargetAtEnd;
 	MovementTimeline.PlayFromStart();
 }
@@ -343,7 +319,7 @@ void AOrbGroup::FollowPath(float deltaSeconds)
 	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
 
-	this->OrbsSceneComponent->SetWorldLocationAndRotation(location, rotation, true);
+	this->SetActorLocationAndRotation(location, rotation, true);
 }
 
 void AOrbGroup::AdjustSpeed() 

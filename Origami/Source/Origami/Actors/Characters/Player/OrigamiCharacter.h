@@ -83,6 +83,12 @@ protected:
 	/** Called via input to interact with the environment. */
 	void Interact();
 
+	/*Called via input in order to let the character walk instead of run!*/
+	void Walk();
+
+	/*Called via input in order to let the character run again.*/
+	void StopWalking();
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
