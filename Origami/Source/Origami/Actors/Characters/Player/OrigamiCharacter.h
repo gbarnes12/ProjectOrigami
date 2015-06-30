@@ -89,6 +89,12 @@ protected:
 	/*Called via input in order to let the character run again.*/
 	void StopWalking();
 
+	/*Called via input in order to "shoot" orbs.*/
+	void Fire();
+
+	/*Called via input in order to switch between orb colors*/
+	void ChangeOrbColor();
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;

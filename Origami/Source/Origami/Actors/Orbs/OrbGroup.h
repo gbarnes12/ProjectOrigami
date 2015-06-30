@@ -66,9 +66,16 @@ public:
 	/*Detach from socket. */
 	void DetachFromSocket();
 
-	/*This will detach you from your current socket at will move towards the target.*/
+	/*This will detach you from your current socket and will move towards the target. */
 	void StartMoveToTarget(AActor* target, bool bAttachToTargetAtEnd = false);
+
+	/*This will detach you from your current socket and will move towards the target. When Actor target is null it won't attach to the target at the end but will move to the passed location.*/
 	void StartMoveToTarget(AActor* target, FVector location, bool bAttachToTargetAtEnd = false);
+
+	/*This will change the color of the orbs*/
+	void ChangeColor(FColor color);
+
+public:
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Static Mesh Socket", Keywords = "static mesh socket"), Category = StaticMesh)
 	static UStaticMeshSocket* GetStaticMeshSocket(UStaticMesh* StaticMesh, const FName SocketName);
@@ -82,6 +89,9 @@ private:
 
 	/* Pointer to the static mesh we use for the orb mesh */
 	class UStaticMesh* OrbMesh;
+
+	/* Pointer to the light component for the orbs. */
+	class UPointLightComponent* Light;
 
 	/* Pointer to the orb material instance in order to modify parameters at runtime. */
 	class UMaterialInstanceDynamic* OrbMaterialInstance;

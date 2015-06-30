@@ -94,16 +94,16 @@ void AOrbGroup::GenerateOrbs()
 
 	const FVector meshScale = FVector(0.20f, 0.20f, 0.20f);
 
-	UPointLightComponent* light = NewObject<UPointLightComponent>(this, UPointLightComponent::StaticClass(), TEXT("PointLight"));
-	if (light)
+	Light = NewObject<UPointLightComponent>(this, UPointLightComponent::StaticClass(), TEXT("PointLight"));
+	if (Light)
 	{
-		light->SetRelativeRotation(FRotator::ZeroRotator);
-		light->SetLightColor(FLinearColor::White);
-		light->SetIntensity(800.0f);
-		light->SetAttenuationRadius(180.0f);
-		light->SetSourceRadius(400.0f);
-		light->AttachTo(this->RootComponent);
-		light->RegisterComponent();
+		Light->SetRelativeRotation(FRotator::ZeroRotator);
+		Light->SetLightColor(FLinearColor::White);
+		Light->SetIntensity(800.0f);
+		Light->SetAttenuationRadius(180.0f);
+		Light->SetSourceRadius(400.0f);
+		Light->AttachTo(this->RootComponent);
+		Light->RegisterComponent();
 	}
 
 	// load static mesh
@@ -130,6 +130,8 @@ void AOrbGroup::GenerateOrbs()
 		return;
 	}
 
+
+
 	// create the area in which we want to spawn the orbs 
 	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
 
@@ -151,6 +153,7 @@ void AOrbGroup::GenerateOrbs()
 			meshComp->SetRelativeRotation(FRotator::ZeroRotator);
 			meshComp->SetWorldLocation(location);
 			meshComp->AttachTo(this->RootComponent);
+			meshComp->SetMaterial(0, this->OrbMaterialInstance);
 
 			const FString particleSystemName = "PS_" + FString::FromInt(i);
 
@@ -197,13 +200,18 @@ void AOrbGroup::MoveToTarget(float value)
 
 void AOrbGroup::StartMoveToTarget(AActor* target, bool bAttachToTargetAtEnd)
 {
+	if (!IsValid(target))
+		return;
+
 	this->StartMoveToTarget(target, target->GetActorLocation(), bAttachToTargetAtEnd);
 }
 
 void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttachToTargetAtEnd)
 {
 	if (!IsValid(target))
-		return;
+	{
+		bAttachToTargetAtEnd = false;
+	}
 
 	// we detach the orb group from the socket first.
 	DetachFromSocket();
@@ -213,6 +221,15 @@ void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttach
 	TargetInfo.StartLocation = this->GetActorLocation();
 	TargetInfo.bAttachToTargetAtEnd = bAttachToTargetAtEnd;
 	MovementTimeline.PlayFromStart();
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Visual Methods
+
+void AOrbGroup::ChangeColor(FColor color)
+{
+	this->OrbMaterialInstance->SetVectorParameterValue(TEXT("Color"), color);
+	this->Light->SetLightColor(color);
 }
 
 ///////////////////////////////////////////////////////////////////////////

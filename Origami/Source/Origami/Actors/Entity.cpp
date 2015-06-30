@@ -32,9 +32,7 @@ AEntity::AEntity()
 	{
 		this->AimBox->SetRelativeLocation(FVector::ZeroVector);
 
-		FVector boxExtends = FVector(this->GetSimpleCollisionRadius()) * 2.2f;
-		boxExtends.Z = boxExtends.Z * 1.5f;
-		this->AimBox->SetBoxExtent(boxExtends);
+		
 		this->AimBox->AttachTo(this->RootComponent);
 	}
 }

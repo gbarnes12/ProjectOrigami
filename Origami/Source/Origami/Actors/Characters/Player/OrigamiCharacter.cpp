@@ -4,6 +4,7 @@
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Origami/Actors/Entity.h"
+#include "Origami/Actors/Orbs/OrbGroup.h"
 #include "OrigamiCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -58,7 +59,6 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 		this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 	}
 
-	// now reserve space for the maximal number of orbs groups the player can posses!
 	this->Orbs.Reserve(3);
 }
 
@@ -122,10 +122,10 @@ void AOrigamiCharacter::FindAim()
 	// reset the target once we are more than 10000.0f cms away!
 	if (IsValid(this->Target))
 	{
-		FVector thisLocation = this->GetActorLocation();
-		FVector targetLocation = this->Target->GetActorLocation();
+		//FVector thisLocation = this->GetActorLocation();
+		//FVector targetLocation = this->Target->GetActorLocation();
 
-		if (FVector::Dist(thisLocation, targetLocation) > 10000.0f)
+		//if (FVector::Dist(thisLocation, targetLocation) > 10000.0f)
 			Target = NULL;
 	}
 }
@@ -147,10 +147,10 @@ void AOrigamiCharacter::CheckIfIsInInteractionRange()
 
 void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
 {
-	if (Orbs.Num() >= 3)
+	if (this->Orbs.Num() == 3)
 		return;
 
-	Orbs.Add(orbGroup);
+	this->Orbs.Push(orbGroup);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -159,11 +159,15 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 {
 	// Set up gameplay key bindings
 	check(InputComponent);
+
+	/* Action bindings*/
 	InputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	InputComponent->BindAction("Interact", IE_Pressed, this, &AOrigamiCharacter::Interact);
 	InputComponent->BindAction("Walk", IE_Pressed, this, &AOrigamiCharacter::Walk);
 	InputComponent->BindAction("Walk", IE_Released, this, &AOrigamiCharacter::StopWalking);
+	InputComponent->BindAction("Fire", IE_Pressed, this, &AOrigamiCharacter::Fire);
+	InputComponent->BindAction("ChangeOrbColor", IE_Pressed, this, &AOrigamiCharacter::ChangeOrbColor);
 
 	InputComponent->BindAxis("MoveForward", this, &AOrigamiCharacter::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOrigamiCharacter::MoveRight);
@@ -179,6 +183,37 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	// handle touch devices
 	InputComponent->BindTouch(IE_Pressed, this, &AOrigamiCharacter::TouchStarted);
 	InputComponent->BindTouch(IE_Released, this, &AOrigamiCharacter::TouchStopped);
+}
+
+void AOrigamiCharacter::ChangeOrbColor()
+{
+	for (int i = 0; i < Orbs.Num(); i++)
+	{
+		AOrbGroup* orbGroup = this->Orbs[i];
+		if (orbGroup)
+		{
+			orbGroup->ChangeColor(FColor::Red);
+		}
+	}
+}
+
+void AOrigamiCharacter::Fire()
+{
+	AOrbGroup* group = this->Orbs.Pop(false);
+
+	// check whether the group we returned is still valid
+	if (IsValid(group))
+	{
+		FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
+		FRotator cameraRotation = this->GetFollowCamera()->GetComponentRotation();
+
+		this->GetActorEyesViewPoint(cameraLocation, cameraRotation);
+
+		FVector start = cameraLocation;
+		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f);
+
+		group->StartMoveToTarget(NULL, end);
+	}
 }
 
 void AOrigamiCharacter::Walk()

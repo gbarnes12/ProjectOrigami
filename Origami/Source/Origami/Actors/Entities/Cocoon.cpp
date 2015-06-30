@@ -15,6 +15,14 @@ ACocoon::ACocoon()
 	// Set this to true since the player needs to be able to interact with us
 	this->bIsInteractable = true;
 
+	// set box extents 
+	if (IsValid(this->AimBox))
+	{
+		FVector boxExtents = FVector(this->GetSimpleCollisionRadius()) * 2.2f;
+		boxExtents.Z = boxExtents.Z * 1.5f;
+		this->AimBox->SetBoxExtent(boxExtents);
+	}
+
 	//  
 	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
 	if (this->OrbPath)
