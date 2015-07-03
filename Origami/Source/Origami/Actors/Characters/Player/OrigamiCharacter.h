@@ -20,6 +20,12 @@ class AOrigamiCharacter : public ACharacter
 	/*Specifies if the player is within the necessary interaction range of an entity.*/
 	bool bIsInInteractionRange;
 
+	/*The target zoom which we currently interpolate too*/
+	float TargetZoom;
+
+	/*The Current Color which the orbs will change to.*/
+	FColor CurrentColor;
+
 	/*The Orbs the player currently posseses*/
 	TArray<class AOrbGroup*> Orbs;
 
@@ -45,6 +51,14 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
 	float IneractionRange;
+
+	/** The min zoom the camera is at.  */
+	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
+	float MinZoom;
+
+	/** the max zoom the camera can interpolate to. */
+	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
+		float MaxZoom;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
@@ -93,7 +107,9 @@ protected:
 	void Fire();
 
 	/*Called via input in order to switch between orb colors*/
-	void ChangeOrbColor();
+	void ChangeOrbColor_Red();
+	void ChangeOrbColor_Green();
+	void ChangeOrbColor_Blue();
 
 protected:
 	// APawn interface
@@ -104,6 +120,8 @@ public:
 	/* Begin play */
 	virtual void BeginPlay() override;
 
+	/* Tick */
+	virtual void Tick(float deltaSeconds) override;
 
 	/*  */
 	void AddOrbGroup(AOrbGroup* orbGroup);
@@ -115,6 +133,10 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 private:
+
+	/* Changes the color of the orbs.*/
+	void ChangeColor(FColor color);
+
 	/* Called every 0.2f seconds in order to find an active aim the player is looking at. */
 	void FindAim();
 	

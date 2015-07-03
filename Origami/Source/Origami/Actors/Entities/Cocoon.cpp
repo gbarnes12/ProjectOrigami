@@ -15,11 +15,13 @@ ACocoon::ACocoon()
 	// Set this to true since the player needs to be able to interact with us
 	this->bIsInteractable = true;
 
+	this->ActionButtonPrompt = NULL;
+
 	// set box extents 
 	if (IsValid(this->AimBox))
 	{
-		FVector boxExtents = FVector(this->GetSimpleCollisionRadius()) * 2.2f;
-		boxExtents.Z = boxExtents.Z * 1.5f;
+		FVector boxExtents = FVector(this->GetSimpleCollisionRadius());// * 2.2f;
+		//boxExtents.Z = boxExtents.Z * 1.5f;
 		this->AimBox->SetBoxExtent(boxExtents);
 	}
 
@@ -77,10 +79,34 @@ void ACocoon::BeginPlay()
 
 	this->Orbs = Cast<AOrbGroup>(orbGroup);
 	this->Orbs->AttachSocket(this);
+
+
+	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Hud/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"));
+	if (!IsValid(this->ActionButtonPrompt))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_ActionPrompt blueprint!"));
+		return;
+	}
+
+	this->ActionButtonPrompt->AttachRootComponentToActor(this);
+	this->ActionButtonPrompt->SetActorHiddenInGame(true);
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // Gameplay
+void ACocoon::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
+{
+	FVector forward = player->GetActorLocation() - collisionPoint;
+	this->ActionButtonPrompt->SetActorLocation(collisionPoint + forward * 0.05f);
+	this->ActionButtonPrompt->SetActorHiddenInGame(false);
+}
+
+void ACocoon::LeaveInteractionRange(AOrigamiCharacter* player)
+{
+
+	this->ActionButtonPrompt->SetActorHiddenInGame(true);
+}
+
 
 void ACocoon::Interact(AOrigamiCharacter* player)
 {

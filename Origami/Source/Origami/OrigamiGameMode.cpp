@@ -23,6 +23,9 @@ void FConstructorStatics::Initialize()
 
 	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Bt_Act_OrbGroup(TEXT("Blueprint'/Game/Origami/Blueprints/Actors/Bt_Act_OrbGroup.Bt_Act_OrbGroup'"));
 	Objects.Add(TEXT("/Game/Origami/Blueprints/Actors/Bt_Act_OrbGroup.Bt_Act_OrbGroup"), Bt_Act_OrbGroup.Get());
+
+	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Bt_ActionPrompt(TEXT("Blueprint'/Game/Origami/Blueprints/Hud/Bt_ActionPrompt.Bt_ActionPrompt'"));
+	Objects.Add(TEXT("/Game/Origami/Blueprints/Hud/Bt_ActionPrompt.Bt_ActionPrompt"), Bt_ActionPrompt.Get());
 }
 
 AOrigamiGameMode::AOrigamiGameMode(const FObjectInitializer& ObjectInitializer)

@@ -39,6 +39,10 @@ public:
 	// Can be called whenever the player interacts with this entity (via Key Press: Interact).
 	virtual void Interact(AOrigamiCharacter* player);
 
+	// Is called whenever the player is within interaction range and this entity is hit by his ray.
+	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint);
+	virtual void LeaveInteractionRange(AOrigamiCharacter* player);
+
 public:
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Entity from string", Keywords = "New Entity from string"), Category = Game)

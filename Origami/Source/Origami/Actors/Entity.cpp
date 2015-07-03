@@ -31,11 +31,12 @@ AEntity::AEntity()
 	if (IsValid(this->AimBox))
 	{
 		this->AimBox->SetRelativeLocation(FVector::ZeroVector);
-
-		
 		this->AimBox->AttachTo(this->RootComponent);
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Event
 
 // Called when the game starts or when spawned
 void AEntity::BeginPlay()
@@ -50,6 +51,18 @@ void AEntity::Tick( float DeltaTime )
 	
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Gameplay
+
+void AEntity::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
+{
+
+}
+
+void AEntity::LeaveInteractionRange(AOrigamiCharacter* player)
+{
+
+}
 
 void AEntity::Interact(AOrigamiCharacter* character)
 {
@@ -65,6 +78,9 @@ void AEntity::Mantle()
 {
 
 }
+
+///////////////////////////////////////////////////////////////////////////
+// Blueprint Utility Methods
 
 AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FString Name)
 {
