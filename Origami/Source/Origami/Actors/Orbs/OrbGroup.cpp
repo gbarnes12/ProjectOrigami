@@ -19,7 +19,9 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->OrbCount = 20;
 	this->OrbColor = FColor::White;
 	this->OrbSpawnBoxExtents = 20.0f;
-
+	this->CurrentDissolveState = 0.0f;
+	this->TargetDissolveState = 0.0f;
+	this->bIsTargetMoving = false;
 	this->bIsGenerated = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
@@ -31,6 +33,12 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->RootSceneComponent = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	this->RootSceneComponent->RelativeLocation = FVector::ZeroVector;
 	this->RootComponent = this->RootSceneComponent;
+
+	// Add trigger component thus we can check whether the orbs collide with an object or not!
+	this->Trigger = CreateDefaultSubobject<USphereComponent>(TEXT("TriggerCollider"));
+	this->Trigger->bGenerateOverlapEvents = true;
+	this->Trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	this->Trigger->AttachTo(this->RootSceneComponent);
 
 	FOnTimelineFloat progressFunction;
 	progressFunction.BindUFunction(this, TEXT("MoveToTarget"));
@@ -48,10 +56,8 @@ void AOrbGroup::BeginPlay()
 
 	this->MovementSpeed = OrbSpeedLevel[0];
 
-	// retrieve the player and set him 
-	// this is just temporarily!
-	//APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	//AttachSocket(playerController->GetPawn());
+	//OnActorBeginOverlap.AddDynamic(this, &AOrbGroup::OnTriggerEnter);
+	//OnActorEndOverlap.AddDynamic(this, &AOrbGroup::OnTriggerExit);
 
 	// GenerateOrbs only at runtime 
 	// if we do this within the constructor the editor becomes slow as fuck somehow?!
@@ -62,6 +68,14 @@ void AOrbGroup::BeginPlay()
 	GetWorldTimerManager().SetTimer(AdjustSpeedTimerHandle, this, &AOrbGroup::AdjustSpeed, 5.0f, true);
 }
 
+
+void AOrbGroup::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	//OnActorBeginOverlap.RemoveDynamic(this, &AOrbGroup::OnTriggerEnter);
+	//OnActorEndOverlap.RemoveDynamic(this, &AOrbGroup::OnTriggerExit);
+
+	Super::EndPlay(EndPlayReason);
+}
 
 void AOrbGroup::Tick(float deltaSeconds)
 {
@@ -79,6 +93,19 @@ void AOrbGroup::Tick(float deltaSeconds)
 		this->SimulateRoaming(deltaSeconds);
 		break;
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Trigger Events
+
+void AOrbGroup::OnTriggerEnter(AActor* Other)
+{
+
+}
+
+void AOrbGroup::OnTriggerExit(AActor* Other)
+{
+
 }
 
 
@@ -189,6 +216,10 @@ void AOrbGroup::MoveToTarget(float value)
 		if (TargetInfo.bAttachToTargetAtEnd)
 			this->AttachSocket(TargetInfo.Target);
 
+		// if we have no target we need to destroy this actor!
+		if (TargetInfo.Target == NULL)
+			this->Destroy();
+
 		// clear the target information
 		TargetInfo.bAttachToTargetAtEnd = false;
 		TargetInfo.StartLocation = FVector::ZeroVector;
@@ -196,6 +227,7 @@ void AOrbGroup::MoveToTarget(float value)
 		TargetInfo.Target = NULL;
 
 		this->MovementTimeline.Stop();
+		
 	}
 }
 
@@ -245,12 +277,17 @@ void AOrbGroup::AttachSocket(AActor* socket)
 
 	if (socket->ActorHasTag(TEXT("Player"))) 
 	{
+		AOrigamiCharacter* player = Cast<AOrigamiCharacter>(socket);
+		if (!player)
+			return;
+		
+		player->AddOrbGroup(this);
+
 		this->AttachedType = EActorType::Player;
 		this->Socket = socket;
-		const AOrigamiCharacter* player = Cast<AOrigamiCharacter>(this->Socket);
+		
 		this->OrbPath = player->OrbPath;
 
-		
 		this->OrbSpeedLevel[0] = 100;
 		this->OrbSpeedLevel[1] = 120;
 		this->OrbSpeedLevel[2] = 140;
@@ -319,6 +356,13 @@ void AOrbGroup::SimulateAttachment(float deltaSeconds)
 
 	if (this->AttachedType == EActorType::None)
 		return;
+
+	// target is moving so we need to stop rotating around the path!
+	if (bIsTargetMoving) 
+	{
+		this->SetActorRotation(this->Socket->GetActorRotation());
+		return;
+	}
 
 	this->FollowPath(deltaSeconds);
 }

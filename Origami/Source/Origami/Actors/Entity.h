@@ -31,10 +31,10 @@ public:
 	virtual void Tick( float DeltaSeconds ) override;
 
 	// Call this whenever this actor becomes visible 
-	void Dismantle();
+	virtual void Dismantle();
 
 	// Call this whenever this entity should be mantled by ink!
-	void Mantle(); 
+	virtual void Mantle();
 
 	// Can be called whenever the player interacts with this entity (via Key Press: Interact).
 	virtual void Interact(AOrigamiCharacter* player);
