@@ -24,7 +24,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
 	class AOrbGroup* Orbs;
 
+	class AActor* ActionButtonPrompt;
+
 public:
 	virtual void Interact(AOrigamiCharacter* player) override;
+	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint) override;
+	virtual void LeaveInteractionRange(AOrigamiCharacter* player) override;
 	FORCEINLINE class USplineComponent* GetOrbPath() const { return this->OrbPath; }
 };

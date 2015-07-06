@@ -102,6 +102,7 @@ void AOrbGroup::GenerateOrbs()
 		Light->SetIntensity(800.0f);
 		Light->SetAttenuationRadius(180.0f);
 		Light->SetSourceRadius(400.0f);
+		Light->SetCastShadows(true);
 		Light->AttachTo(this->RootComponent);
 		Light->RegisterComponent();
 	}

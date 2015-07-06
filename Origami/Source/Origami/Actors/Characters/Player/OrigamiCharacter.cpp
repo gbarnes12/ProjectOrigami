@@ -22,6 +22,13 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
+	// Set min and max zoom values
+	MaxZoom = 700.0f;
+	MinZoom = 480.0f;
+
+	// Current color!
+	CurrentColor = FColor::Green;
+
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -41,6 +48,7 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->AttachTo(RootComponent);
 	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
+	CameraBoom->SocketOffset = FVector(0.0, -500.f, 0.0);
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -72,6 +80,16 @@ void AOrigamiCharacter::BeginPlay()
 	GetWorldTimerManager().SetTimer(IsWithinInteractionRangeHandle, this, &AOrigamiCharacter::CheckIfIsInInteractionRange, 0.3f, true);
 }
 
+
+void AOrigamiCharacter::Tick(float deltaSeconds)
+{
+	Super::Tick(deltaSeconds);
+
+	//if (CameraBoom->TargetArmLength != this->TargetZoom)
+		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, this->TargetZoom, deltaSeconds, 1.3f);
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 /// Gameplay
 void AOrigamiCharacter::FindAim()
@@ -94,7 +112,7 @@ void AOrigamiCharacter::FindAim()
 	//Re-initialize hit info
 	FHitResult rvHit(ForceInit);
 
-	GetWorld()->LineTraceSingleByChannel(
+	/*GetWorld()->LineTraceSingleByChannel(
 		rvHit, //result
 		start, //start
 		end, //end
@@ -118,16 +136,48 @@ void AOrigamiCharacter::FindAim()
 			}
 		}
 	}
-
+	*/
+//	
 	// reset the target once we are more than 10000.0f cms away!
 	if (IsValid(this->Target))
 	{
-		//FVector thisLocation = this->GetActorLocation();
-		//FVector targetLocation = this->Target->GetActorLocation();
-
-		//if (FVector::Dist(thisLocation, targetLocation) > 10000.0f)
-			Target = NULL;
+		this->Target->LeaveInteractionRange(this);
+		Target = NULL;
 	}
+
+	// new end position!
+	end += FVector(0.0f, 0.0f, 300.0f);
+
+	// Second trace + 300 cms above in order to prevent always aiming to the top. 
+	GetWorld()->LineTraceSingleByChannel(
+		rvHit, //result
+		start, //start
+		end, //end
+		ECollisionChannel::ECC_Visibility, //collision channel
+		rvTraceParams);
+
+	if (rvHit.bBlockingHit)
+	{
+		AActor* actor = rvHit.GetActor();
+		if (IsValid(actor))
+		{
+			if (actor->IsA(AEntity::StaticClass()))
+			{
+				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 1.0f, 2.0f);
+				AEntity* entity = Cast<AEntity>(actor);
+				if (IsValid(entity) && entity->bIsInteractable)
+				{
+					//UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Green, 0.2f);
+					this->Target = entity;
+					this->Target->EnterInteractionRange(this, rvHit.ImpactPoint);
+					return;
+				}
+			}
+		}
+	}
+
+//	UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 0.2f);
+
 }
 
 void AOrigamiCharacter::CheckIfIsInInteractionRange()
@@ -139,7 +189,7 @@ void AOrigamiCharacter::CheckIfIsInInteractionRange()
 	FVector targetLocation = this->Target->GetActorLocation();
 
 	// is the player within 1.5 meters of the object?
-	if (FVector::Dist(thisLocation, targetLocation) <= 1200.0f)
+	if (FVector::Dist(thisLocation, targetLocation) <= 2000.0f)
 		this->bIsInInteractionRange = true;
 	else
 		this->bIsInInteractionRange = false;
@@ -150,7 +200,23 @@ void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
 	if (this->Orbs.Num() == 3)
 		return;
 
+	orbGroup->ChangeColor(this->CurrentColor);
+
 	this->Orbs.Push(orbGroup);
+}
+
+void AOrigamiCharacter::ChangeColor(FColor color)
+{
+	this->CurrentColor = color;
+
+	for (int i = 0; i < Orbs.Num(); i++)
+	{
+		AOrbGroup* orbGroup = this->Orbs[i];
+		if (orbGroup)
+		{
+			orbGroup->ChangeColor(color);
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -167,7 +233,9 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	InputComponent->BindAction("Walk", IE_Pressed, this, &AOrigamiCharacter::Walk);
 	InputComponent->BindAction("Walk", IE_Released, this, &AOrigamiCharacter::StopWalking);
 	InputComponent->BindAction("Fire", IE_Pressed, this, &AOrigamiCharacter::Fire);
-	InputComponent->BindAction("ChangeOrbColor", IE_Pressed, this, &AOrigamiCharacter::ChangeOrbColor);
+	InputComponent->BindAction("ChangeOrbColor_Red", IE_Pressed, this, &AOrigamiCharacter::ChangeOrbColor_Red);
+	InputComponent->BindAction("ChangeOrbColor_Green", IE_Pressed, this, &AOrigamiCharacter::ChangeOrbColor_Green);
+	InputComponent->BindAction("ChangeOrbColor_Blue", IE_Pressed, this, &AOrigamiCharacter::ChangeOrbColor_Blue);
 
 	InputComponent->BindAxis("MoveForward", this, &AOrigamiCharacter::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOrigamiCharacter::MoveRight);
@@ -185,20 +253,26 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	InputComponent->BindTouch(IE_Released, this, &AOrigamiCharacter::TouchStopped);
 }
 
-void AOrigamiCharacter::ChangeOrbColor()
+void AOrigamiCharacter::ChangeOrbColor_Red()
 {
-	for (int i = 0; i < Orbs.Num(); i++)
-	{
-		AOrbGroup* orbGroup = this->Orbs[i];
-		if (orbGroup)
-		{
-			orbGroup->ChangeColor(FColor::Red);
-		}
-	}
+	this->ChangeColor(FColor::Red);
+}
+
+void AOrigamiCharacter::ChangeOrbColor_Green()
+{
+	this->ChangeColor(FColor::Green);
+}
+
+void AOrigamiCharacter::ChangeOrbColor_Blue()
+{
+	this->ChangeColor(FColor::Blue);
 }
 
 void AOrigamiCharacter::Fire()
 {
+	if (this->Orbs.Num() == 0)
+		return;
+
 	AOrbGroup* group = this->Orbs.Pop(false);
 
 	// check whether the group we returned is still valid
@@ -210,7 +284,7 @@ void AOrigamiCharacter::Fire()
 		this->GetActorEyesViewPoint(cameraLocation, cameraRotation);
 
 		FVector start = cameraLocation;
-		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f);
+		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f) + FVector(0.0f, 0.0f, 300.0f);
 
 		group->StartMoveToTarget(NULL, end);
 	}
@@ -230,7 +304,10 @@ void AOrigamiCharacter::Interact()
 {
 	if (this->bIsInInteractionRange) 
 	{
-		this->Target->Interact(this);
+		if (this->Target) 
+		{
+			this->Target->Interact(this);
+		}
 	}
 }
 
@@ -274,6 +351,12 @@ void AOrigamiCharacter::MoveForward(float Value)
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
+	
+		TargetZoom = this->MaxZoom;
+	}
+
+	if (Value == 0.0f) {
+		TargetZoom = this->MinZoom;
 	}
 }
 
@@ -289,8 +372,11 @@ void AOrigamiCharacter::MoveRight(float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
+
 	}
+	
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////
