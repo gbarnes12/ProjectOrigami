@@ -113,8 +113,9 @@ void ACocoon::Interact(AOrigamiCharacter* player)
 	if (!IsValid(this->Orbs))
 		return;
 
-	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true);
 	//this->Orbs->AttachSocket(player);
-	player->AddOrbGroup(this->Orbs);
+
+	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true);
+	player->DisableInput(Cast<APlayerController>(player->GetController()));
 	this->Orbs = NULL;
 }

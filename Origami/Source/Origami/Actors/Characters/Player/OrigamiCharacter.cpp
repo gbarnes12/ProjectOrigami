@@ -86,7 +86,12 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 	Super::Tick(deltaSeconds);
 
 	//if (CameraBoom->TargetArmLength != this->TargetZoom)
-		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, this->TargetZoom, deltaSeconds, 1.3f);
+	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, this->TargetZoom, deltaSeconds, 1.3f);
+
+	if (SideAmount == 0.0f && ForwardAmount == 0.0f)
+		SetIsTargetMovingForOrbs(false);
+	else 
+		SetIsTargetMovingForOrbs(true);
 }
 
 
@@ -203,6 +208,7 @@ void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
 	orbGroup->ChangeColor(this->CurrentColor);
 
 	this->Orbs.Push(orbGroup);
+	this->EnableInput(Cast<APlayerController>(this->GetController()));
 }
 
 void AOrigamiCharacter::ChangeColor(FColor color)
@@ -216,6 +222,14 @@ void AOrigamiCharacter::ChangeColor(FColor color)
 		{
 			orbGroup->ChangeColor(color);
 		}
+	}
+}
+
+void AOrigamiCharacter::SetIsTargetMovingForOrbs(bool value) 
+{
+	for (int i = 0; i < this->Orbs.Num(); i++) 
+	{
+		this->Orbs[i]->bIsTargetMoving = value;
 	}
 }
 
@@ -342,6 +356,8 @@ void AOrigamiCharacter::LookUpAtRate(float Rate)
 
 void AOrigamiCharacter::MoveForward(float Value)
 {
+	ForwardAmount = Value;
+
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
 		// find out which way is forward
@@ -353,15 +369,17 @@ void AOrigamiCharacter::MoveForward(float Value)
 		AddMovementInput(Direction, Value);
 	
 		TargetZoom = this->MaxZoom;
+		return;
 	}
 
-	if (Value == 0.0f) {
-		TargetZoom = this->MinZoom;
-	}
+	TargetZoom = this->MinZoom;
+	
 }
 
 void AOrigamiCharacter::MoveRight(float Value)
 {
+	SideAmount = Value;
+
 	if ( (Controller != NULL) && (Value != 0.0f) )
 	{
 		// find out which way is right
@@ -372,9 +390,8 @@ void AOrigamiCharacter::MoveRight(float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
-
+		return;
 	}
-	
 }
 
 

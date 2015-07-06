@@ -48,6 +48,9 @@ public:
 	TArray<float> OrbSpeedLevel;
 
 	UPROPERTY(EditAnywhere, Category = Visual)
+	bool bIsTargetMoving;
+
+	UPROPERTY(EditAnywhere, Category = Visual)
 	float OrbSpawnBoxExtents;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
@@ -56,8 +59,7 @@ public:
 public:
 	/*UE4 Native Events*/
 	virtual void BeginPlay() override;
-
-	/*UE4 Native Event*/
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float deltaSeconds) override;
 
 	/*Attach a new socket to the orb group!*/
@@ -93,6 +95,9 @@ private:
 	/* Pointer to the light component for the orbs. */
 	class UPointLightComponent* Light;
 
+	/* Trigger component. */
+	class USphereComponent* Trigger;
+
 	/* Pointer to the orb material instance in order to modify parameters at runtime. */
 	class UMaterialInstanceDynamic* OrbMaterialInstance;
 
@@ -123,6 +128,12 @@ private:
 	/*Which is the current rotation?*/
 	float CurrentRotation;
 
+	/*Which dissolve state do we have*/
+	float CurrentDissolveState;
+
+	/*To which dissolve state do we want to interpolate to?*/
+	float TargetDissolveState;
+
 private:
 	/* Construction of the orbs */
 	void GenerateOrbs();
@@ -142,4 +153,10 @@ private:
 	/* Move to target based on a given timeline */
 	UFUNCTION()
 	void MoveToTarget(float value);
+
+	UFUNCTION()
+	void OnTriggerEnter(AActor* Other);
+
+	UFUNCTION()
+	void OnTriggerExit(AActor* Other);
 };

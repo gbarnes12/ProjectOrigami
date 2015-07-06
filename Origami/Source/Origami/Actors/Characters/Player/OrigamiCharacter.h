@@ -29,6 +29,10 @@ class AOrigamiCharacter : public ACharacter
 	/*The Orbs the player currently posseses*/
 	TArray<class AOrbGroup*> Orbs;
 
+	/*Temp values*/
+	float ForwardAmount;
+	float SideAmount;
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -58,7 +62,7 @@ public:
 
 	/** the max zoom the camera can interpolate to. */
 	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
-		float MaxZoom;
+	float MaxZoom;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
@@ -142,5 +146,9 @@ private:
 	
 	/*Will check whether the player is within the interaction range of a target or not!*/
 	void CheckIfIsInInteractionRange();
+
+	/* Tells the orbs to stop moving around the path or to start again! */
+	void SetIsTargetMovingForOrbs(bool value);
+
 };
 
