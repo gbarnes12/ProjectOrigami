@@ -63,7 +63,7 @@ public:
 	virtual void Tick(float deltaSeconds) override;
 
 	/*Attach a new socket to the orb group!*/
-	void AttachSocket(AActor* socket);
+	void AttachSocket(AActor* socketActor);
 
 	/*Detach from socket. */
 	void DetachFromSocket();
@@ -77,6 +77,22 @@ public:
 	/*This will change the color of the orbs*/
 	void ChangeColor(FColor color);
 
+public:
+	/* Custom blueprint methods */
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Change orb color", Keywords = "change orb color"), Category = OrbGroup)
+	void K2_ChangeColor(FColor color);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Start move to target", Keywords = "move to target"), Category = OrbGroup)
+	void K2_StartMoveToTargetWithoutLocation(AActor* target, bool bAttachToTargetAtEnd = false);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Start move to target with location", Keywords = "move to target"), Category = OrbGroup)
+	void K2_StartMoveToTargetWithLocation(AActor* target, FVector location, bool bAttachToTargetAtEnd = false);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Pause at location", Keywords = "pause at location"), Category = OrbGroup)
+	void K2_PauseAtLocation();
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Resume at location", Keywords = "Resume at location"), Category = OrbGroup)
+	void K2_ResumeFromLocation();
 public:
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Static Mesh Socket", Keywords = "static mesh socket"), Category = StaticMesh)
@@ -124,6 +140,9 @@ private:
 	
 	/*Are we finished generating*/
 	bool bIsGenerated;
+	
+	/*Should the orbs pause?*/
+	bool bIsPaused;
 
 	/*Which is the current rotation?*/
 	float CurrentRotation;

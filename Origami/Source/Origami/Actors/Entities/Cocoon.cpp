@@ -14,7 +14,6 @@ ACocoon::ACocoon()
 {
 	// Set this to true since the player needs to be able to interact with us
 	this->bIsInteractable = true;
-
 	this->ActionButtonPrompt = NULL;
 
 	// set box extents 
@@ -45,11 +44,7 @@ void ACocoon::BeginPlay()
 	if (!IsValid(this->OrbPath))
 		return;
 
-	AActor* rock = this->GetAttachParentActor();
-	if (!IsValid(rock))
-		return;
-	//
-	float radius = (rock->GetSimpleCollisionRadius() + this->GetSimpleCollisionRadius()) - 100.0f;
+	float radius = (this->GetSimpleCollisionRadius()) * 1.5f;
 	this->OrbPath->ClearSplinePoints();
 
 	// TODO: REFACTOR THIS SO IT MIGHT BE USED WITHIN A BLUEPRINT 
@@ -70,7 +65,7 @@ void ACocoon::BeginPlay()
 	this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 
 	// Now we need to spawn the OrbGroup :)
-	AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"));
+	AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
 	if (!IsValid(orbGroup)) 
 	{
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));
@@ -81,7 +76,7 @@ void ACocoon::BeginPlay()
 	this->Orbs->AttachSocket(this);
 
 
-	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Hud/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"));
+	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Hud/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"), false);
 	if (!IsValid(this->ActionButtonPrompt))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_ActionPrompt blueprint!"));
@@ -96,6 +91,9 @@ void ACocoon::BeginPlay()
 // Gameplay
 void ACocoon::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
 {
+	if (!IsValid(this->ActionButtonPrompt) && !IsValid(player))
+		return;
+
 	FVector forward = player->GetActorLocation() - collisionPoint;
 	this->ActionButtonPrompt->SetActorLocation(collisionPoint + forward * 0.05f);
 	this->ActionButtonPrompt->SetActorHiddenInGame(false);

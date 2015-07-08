@@ -46,10 +46,10 @@ public:
 public:
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Entity from string", Keywords = "New Entity from string"), Category = Game)
-	static AEntity* NewEntityFromString(AActor* actor, const FString Path, const FString Name);
+	static AEntity* NewEntityFromString(AActor* actor, const FString Path, const FString Name, bool AttachToParent);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "New Actor from string", Keywords = "New Actor from string"), Category = Game)
-	static AActor* NewActorFromString(AActor* Actor, const FString Path, const FString Name);
+	static AActor* NewActorFromString(AActor* Actor, const FString Path, const FString Name, bool AttachToParent);
 	
 protected:
 	EMantleState State;

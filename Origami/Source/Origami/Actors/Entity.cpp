@@ -82,7 +82,7 @@ void AEntity::Mantle()
 ///////////////////////////////////////////////////////////////////////////
 // Blueprint Utility Methods
 
-AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FString Name)
+AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FString Name, bool AttachToParent = false)
 {
 	if (!Actor)
 		return nullptr;
@@ -98,12 +98,16 @@ AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FSt
 		return nullptr;
 
 	UWorld* world = Actor->GetWorld();
-	AActor* actor = world->SpawnActor<AActor>(objectFinder->GeneratedClass);
+	AActor* actorNew = world->SpawnActor<AActor>(objectFinder->GeneratedClass);
 
-	if (IsValid(actor))
+	if (IsValid(actorNew))
 	{
+		if (AttachToParent)
+		{
+			actorNew->K2_AttachRootComponentToActor(Actor);
+		}
 		//UE_LOG(LogTemp, Warning, TEXT("Couldn't create entity %s!"), *Name);
-		return actor;
+		return actorNew;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Couldn't create blueprint %s!"), *Name);
@@ -111,7 +115,7 @@ AActor* AEntity::NewActorFromString(AActor* Actor, const FString Path, const FSt
 	return nullptr;
 }
 
-AEntity* AEntity::NewEntityFromString(AActor* Actor, const FString Path, const FString Name)
+AEntity* AEntity::NewEntityFromString(AActor* Actor, const FString Path, const FString Name, bool AttachToParent = false)
 {
 	TArray<UObject*> LoadedObjects;
 
@@ -135,6 +139,11 @@ AEntity* AEntity::NewEntityFromString(AActor* Actor, const FString Path, const F
 
 		if (IsValid(entity))
 		{
+			if (AttachToParent)
+			{
+				entity->K2_AttachRootComponentToActor(Actor);
+			}
+
 			//UE_LOG(LogTemp, Warning, TEXT("Couldn't create entity %s!"), *Name);
 			return entity;
 		}

@@ -23,6 +23,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->TargetDissolveState = 0.0f;
 	this->bIsTargetMoving = false;
 	this->bIsGenerated = false;
+	this->bIsPaused = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
 
@@ -369,7 +370,7 @@ void AOrbGroup::SimulateAttachment(float deltaSeconds)
 
 void AOrbGroup::FollowPath(float deltaSeconds) 
 {
-	if (!this->OrbPath)
+	if (!this->OrbPath || bIsPaused)
 		return;
 
 	float pathDistance = this->OrbPath->GetSplineLength();
@@ -395,6 +396,32 @@ void AOrbGroup::AdjustSpeed()
 		this->MovementSpeed = OrbSpeedLevel[0];
 
 	//UE_LOG(LogTemp, Log, TEXT("Movement Speed: %f"), this->MovementSpeed);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// OrbGroup Blueprint Methods
+void AOrbGroup::K2_ChangeColor(FColor color)
+{
+	this->ChangeColor(color);
+}
+
+void AOrbGroup::K2_StartMoveToTargetWithoutLocation(AActor* target, bool bAttachToTargetAtEnd)
+{
+	this->StartMoveToTarget(target, bAttachToTargetAtEnd);
+}
+void AOrbGroup::K2_StartMoveToTargetWithLocation(AActor* target, FVector location, bool bAttachToTargetAtEnd)
+{
+	this->StartMoveToTarget(target, location, bAttachToTargetAtEnd);
+}
+
+void AOrbGroup::K2_PauseAtLocation()
+{
+	this->bIsPaused = true;
+}
+
+void AOrbGroup::K2_ResumeFromLocation()
+{
+	this->bIsPaused = false;
 }
 
 ///////////////////////////////////////////////////////////////////////////
