@@ -6,6 +6,7 @@
 #include "Actors/Entities/Cocoon.h"
 #include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 #include "Actors/Entity.h"
+#include "Actors/OrbPath.h"
 #include "OrbGroup.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -14,6 +15,8 @@
 AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	this->Tags.Add(TEXT("OrbGroup"));
+
 	this->TravelledDistanceOnPath = 0.0f;
 	this->Mode = EOrbMode::FreeRoam;
 	this->OrbCount = 20;
@@ -127,9 +130,10 @@ void AOrbGroup::GenerateOrbs()
 	{
 		Light->SetRelativeRotation(FRotator::ZeroRotator);
 		Light->SetLightColor(FLinearColor::White);
-		Light->SetIntensity(800.0f);
-		Light->SetAttenuationRadius(180.0f);
-		Light->SetSourceRadius(400.0f);
+		Light->SetIntensity(10000);
+		Light->SetAttenuationRadius(1000);
+		Light->SetSourceRadius(0.0f);
+		Light->SetSourceLength(0.0f);
 		Light->SetCastShadows(true);
 		Light->AttachTo(this->RootComponent);
 		Light->RegisterComponent();
@@ -158,8 +162,6 @@ void AOrbGroup::GenerateOrbs()
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create dynamic material instance from mesh with filename %s"), *this->OrbMeshFileName);
 		return;
 	}
-
-
 
 	// create the area in which we want to spawn the orbs 
 	const FBox spawnBox = FBox::BuildAABB(this->GetActorLocation(), FVector(this->OrbSpawnBoxExtents));
@@ -319,10 +321,23 @@ void AOrbGroup::AttachSocket(AActor* socket)
 	{
 		this->Socket = socket;
 		this->AttachedType = EActorType::Path;
+
+		const AOrbPath* path = Cast<AOrbPath>(this->Socket);
+		if (!IsValid(path))
+		{
+			DetachFromSocket();
+			return;
+		}
+		this->OrbPath = path->OrbPath;
+
+		this->OrbSpeedLevel[0] = 1000;
+		this->OrbSpeedLevel[1] = 1030;
+		this->OrbSpeedLevel[2] = 1100;
+
 	}
 
 	this->K2_AttachRootComponentToActor(this->Socket, NAME_None, EAttachLocation::Type::KeepWorldPosition);
-	this->TravelledDistanceOnPath = 0.0f;
+	this->TravelledDistanceOnPath = this->OrbPath->GetSplineLength();
 	this->CurrentRotation = 0.0f;
 	this->MovementSpeed = this->OrbSpeedLevel[0];
 	this->Mode = EOrbMode::Attached;
@@ -332,6 +347,15 @@ void AOrbGroup::DetachFromSocket()
 {
 	if (this->Socket == NULL)
 		return;
+
+	if (this->Socket->ActorHasTag(TEXT("OrbPath")))
+	{
+		AOrbPath* path = Cast<AOrbPath>(this->Socket);
+		if (IsValid(path))
+		{
+			path->DetachFromGroup();
+		}
+	}
 	
 	this->DetachRootComponentFromParent(true);
 	this->Socket = NULL;
@@ -359,35 +383,69 @@ void AOrbGroup::SimulateAttachment(float deltaSeconds)
 		return;
 
 	// target is moving so we need to stop rotating around the path!
-	if (bIsTargetMoving) 
+	if (this->bIsTargetMoving)
 	{
 		this->SetActorRotation(this->Socket->GetActorRotation());
 		return;
 	}
+
+	if (this->bIsPaused) 
+		return;
 
 	this->FollowPath(deltaSeconds);
 }
 
 void AOrbGroup::FollowPath(float deltaSeconds) 
 {
-	if (!this->OrbPath || bIsPaused)
+	if (!this->OrbPath )
 		return;
 
-	float pathDistance = this->OrbPath->GetSplineLength();
+	float pathDistance = 0.0f;
 	this->TravelledDistanceOnPath = FMath::FInterpConstantTo(this->TravelledDistanceOnPath, pathDistance, deltaSeconds, this->MovementSpeed);
 
-	if (this->TravelledDistanceOnPath >= pathDistance)
-		this->TravelledDistanceOnPath = 0.0f;
+	if (this->TravelledDistanceOnPath <= pathDistance) 
+	{
+		if (this->AttachedType == EActorType::Path) 
+		{
+			AOrbPath* path = Cast<AOrbPath>(this->Socket);
+			path->OrbsHaveReachedEnd.Broadcast(this);
+			this->DetachFromSocket();
+		}
+		else 
+		{
+			this->TravelledDistanceOnPath = this->OrbPath->GetSplineLength();
+		}
+	}
 
+	
 	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
 
 	this->SetActorLocationAndRotation(location, rotation, true);
+
+	// in case we are attached to a path we need to 
+	// do some specific stuff example handle waiting at certain
+	// points and so on!
+	if (this->AttachedType == EActorType::Path)
+	{
+		AOrbPath* path = Cast<AOrbPath>(this->Socket);
+		if (!IsValid(path))
+			return;
+
+		FSplinePointInfo* splineInfo = path->IsNearSplinePoint(this->TravelledDistanceOnPath, 20);
+		if (splineInfo != NULL)
+		{
+			if (splineInfo->bPauseAtPoint)
+			{
+				splineInfo->bHasBeenVisited = true;
+				this->K2_PauseAtLocation();
+			}
+		}
+	}
 }
 
 void AOrbGroup::AdjustSpeed() 
 {
-
 	if (this->MovementSpeed == OrbSpeedLevel[0])
 		this->MovementSpeed = OrbSpeedLevel[2];
 	else if (this->MovementSpeed == OrbSpeedLevel[2])

@@ -15,6 +15,8 @@ ACocoon::ACocoon()
 	// Set this to true since the player needs to be able to interact with us
 	this->bIsInteractable = true;
 	this->ActionButtonPrompt = NULL;
+	this->bSpawnOrbsAtStartup = true;
+	this->Orbs = NULL;
 
 	// set box extents 
 	if (IsValid(this->AimBox))
@@ -64,17 +66,19 @@ void ACocoon::BeginPlay()
 	this->OrbPath->ResetRelativeTransform();
 	this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
 
-	// Now we need to spawn the OrbGroup :)
-	AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
-	if (!IsValid(orbGroup)) 
+	if (bSpawnOrbsAtStartup)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));
-		return;
+		// Now we need to spawn the OrbGroup :)
+		AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
+		if (!IsValid(orbGroup))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));
+			return;
+		}
+
+		this->Orbs = Cast<AOrbGroup>(orbGroup);
+		this->Orbs->AttachSocket(this);
 	}
-
-	this->Orbs = Cast<AOrbGroup>(orbGroup);
-	this->Orbs->AttachSocket(this);
-
 
 	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Hud/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"), false);
 	if (!IsValid(this->ActionButtonPrompt))
@@ -91,7 +95,7 @@ void ACocoon::BeginPlay()
 // Gameplay
 void ACocoon::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
 {
-	if (!IsValid(this->ActionButtonPrompt) && !IsValid(player))
+	if (!IsValid(this->ActionButtonPrompt) || !IsValid(player) || !this->Orbs)
 		return;
 
 	FVector forward = player->GetActorLocation() - collisionPoint;
@@ -101,7 +105,6 @@ void ACocoon::EnterInteractionRange(AOrigamiCharacter* player, FVector collision
 
 void ACocoon::LeaveInteractionRange(AOrigamiCharacter* player)
 {
-
 	this->ActionButtonPrompt->SetActorHiddenInGame(true);
 }
 

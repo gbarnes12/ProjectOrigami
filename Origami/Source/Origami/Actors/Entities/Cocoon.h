@@ -12,20 +12,23 @@ UCLASS()
 class ORIGAMI_API ACocoon : public AEntity
 {
 	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, Category = Cocoon)
+	bool bSpawnOrbsAtStartup;
 
 public:
 	ACocoon();
 	virtual void BeginPlay() override;
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cocoon, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Visual, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cocoon, meta = (AllowPrivateAccess = "true"))
 	class AOrbGroup* Orbs;
 
 	class AActor* ActionButtonPrompt;
-
+	
 public:
 	virtual void Interact(AOrigamiCharacter* player) override;
 	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint) override;

@@ -10,9 +10,9 @@ AStaticEntity::AStaticEntity()
 	if (this->Mesh)
 	{
 		this->Mesh->AttachTo(this->RootComponent);
-		this->Mesh->RegisterComponent();
 		this->Mesh->SetRelativeLocation(FVector::ZeroVector);
 		this->Mesh->SetRelativeRotation(FRotator::ZeroRotator);
+	//
 	}
 
 }
@@ -23,6 +23,7 @@ AStaticEntity::AStaticEntity()
 void AStaticEntity::BeginPlay()
 {
 	this->Mesh->SetVisibility(false);
+	this->Mesh->RegisterComponent();
 }
 
 ///////////////////////////////////////////////////////////////////////////
