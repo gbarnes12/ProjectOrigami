@@ -410,6 +410,7 @@ void AOrbGroup::FollowPath(float deltaSeconds)
 			AOrbPath* path = Cast<AOrbPath>(this->Socket);
 			path->OrbsHaveReachedEnd.Broadcast(this);
 			this->DetachFromSocket();
+			return;
 		}
 		else 
 		{
