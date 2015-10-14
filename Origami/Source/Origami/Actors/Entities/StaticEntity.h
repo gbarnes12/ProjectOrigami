@@ -20,6 +20,8 @@ public:
 
 public:
 	/** Override of entity methods */
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Dismantle", Keywords = "Dismantle"), Category = StaticEntity)
 	virtual void Dismantle() override;
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Mantle", Keywords = "Mantle"), Category = StaticEntity)
 	virtual void Mantle() override;
 };

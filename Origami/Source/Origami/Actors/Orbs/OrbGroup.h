@@ -87,6 +87,10 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Start move to target with location", Keywords = "move to target"), Category = OrbGroup)
 	void K2_StartMoveToTargetWithLocation(AActor* target, FVector location, bool bAttachToTargetAtEnd = false);
 
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Start move to target with location", Keywords = "move to target"), Category = OrbGroup)
+	void K3_StartMoveToTargetWithLocation(FVector location, bool bAttachToTargetAtEnd = false);
+
+
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Pause at location", Keywords = "pause at location"), Category = OrbGroup)
 	void K2_PauseAtLocation();
 

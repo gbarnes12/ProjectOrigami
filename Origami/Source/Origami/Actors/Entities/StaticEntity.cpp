@@ -22,7 +22,7 @@ AStaticEntity::AStaticEntity()
 
 void AStaticEntity::BeginPlay()
 {
-	this->Mesh->SetVisibility(false);
+	Mantle();
 	this->Mesh->RegisterComponent();
 }
 
@@ -31,10 +31,14 @@ void AStaticEntity::BeginPlay()
 
 void AStaticEntity::Dismantle()
 {
+	this->Mesh->SetVisibility(true);
+	this->SetActorEnableCollision(true);
 	Super::Dismantle();
 }
 
 void AStaticEntity::Mantle()
 {
+	this->Mesh->SetVisibility(false);
+	this->SetActorEnableCollision(false);
 	Super::Mantle();
 }

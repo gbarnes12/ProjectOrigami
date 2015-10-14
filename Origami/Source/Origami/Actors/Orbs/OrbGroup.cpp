@@ -16,7 +16,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	this->Tags.Add(TEXT("OrbGroup"));
-
+	
 	this->TravelledDistanceOnPath = 0.0f;
 	this->Mode = EOrbMode::FreeRoam;
 	this->OrbCount = 20;
@@ -29,7 +29,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->bIsPaused = false;
 	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
-
+	
 	// The socket functions as 
 	this->Socket = NULL;
 
@@ -249,6 +249,10 @@ void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttach
 		bAttachToTargetAtEnd = false;
 	}
 
+	this->OrbSpeedLevel[0] = 100;
+	this->OrbSpeedLevel[1] = 120;
+	this->OrbSpeedLevel[2] = 140;
+
 	// we detach the orb group from the socket first.
 	DetachFromSocket();
 
@@ -264,6 +268,7 @@ void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttach
 
 void AOrbGroup::ChangeColor(FColor color)
 {
+	UE_LOG(LogTemp, Info, TEXt("Teeeest"));
 	this->OrbMaterialInstance->SetVectorParameterValue(TEXT("Color"), color);
 	this->Light->SetLightColor(color);
 }
@@ -421,7 +426,7 @@ void AOrbGroup::FollowPath(float deltaSeconds)
 	
 	const FVector location = this->OrbPath->GetWorldLocationAtDistanceAlongSpline(TravelledDistanceOnPath);
 	const FRotator rotation = this->OrbPath->GetWorldRotationAtDistanceAlongSpline(TravelledDistanceOnPath);
-
+	
 	this->SetActorLocationAndRotation(location, rotation, true);
 
 	// in case we are attached to a path we need to 
@@ -471,6 +476,11 @@ void AOrbGroup::K2_StartMoveToTargetWithoutLocation(AActor* target, bool bAttach
 void AOrbGroup::K2_StartMoveToTargetWithLocation(AActor* target, FVector location, bool bAttachToTargetAtEnd)
 {
 	this->StartMoveToTarget(target, location, bAttachToTargetAtEnd);
+}
+
+void AOrbGroup::K3_StartMoveToTargetWithLocation(FVector location, bool bAttachToTargetAtEnd)
+{
+	this->StartMoveToTarget(NULL, location, bAttachToTargetAtEnd);
 }
 
 void AOrbGroup::K2_PauseAtLocation()
