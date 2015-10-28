@@ -268,7 +268,7 @@ void AOrbGroup::StartMoveToTarget(AActor* target, FVector location, bool bAttach
 
 void AOrbGroup::ChangeColor(FColor color)
 {
-	UE_LOG(LogTemp, Info, TEXt("Teeeest"));
+	//UE_LOG(LogTemp, Info, TEXt("Teeeest"));
 	this->OrbMaterialInstance->SetVectorParameterValue(TEXT("Color"), color);
 	this->Light->SetLightColor(color);
 }
