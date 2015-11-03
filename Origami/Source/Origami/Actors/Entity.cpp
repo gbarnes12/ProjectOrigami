@@ -33,6 +33,10 @@ AEntity::AEntity()
 		this->AimBox->SetRelativeLocation(FVector::ZeroVector);
 		this->AimBox->AttachTo(this->RootComponent);
 	}
+
+	// Only the visibility has to be blocked for our aiming mechanism
+	this->AimBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+	this->AimBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 }
 
 ///////////////////////////////////////////////////////////////////////////
