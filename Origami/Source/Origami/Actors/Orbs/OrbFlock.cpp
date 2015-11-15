@@ -102,10 +102,8 @@ void AOrbFlock::Tick(float deltaSeconds)
 
 		FVector targetVelocity = orb.Velocity + velocity;
 
-		// rotate the flocker towards the velocity direction vector
-		// get the rotation value for our desired target velocity (i.e. if we were in that direction)
 		FRotator rot = FindLookAtRotation(orb.Transform.GetLocation(), orb.Transform.GetLocation() + targetVelocity);
-		// lerp our current rotation towards the desired velocity vector based on rotationspeed * time
+	
 		FRotator final = FMath::RInterpTo(orb.Transform.Rotator(), rot, deltaSeconds, 0.3f);
 		orb.Transform.SetRotation(final.Quaternion());
 
@@ -206,9 +204,6 @@ FVector AOrbFlock::ComputSeparation(FOrbFlockMember& member)
 		FVector difference = member.Transform.GetLocation() - this->Orbs[i].Transform.GetLocation();
 		float scale = difference.Size();
 		difference.Normalize();
-
-		//if (scale > 0.0f)
-		//	difference = difference * (Simulation.SeparationRadius / scale);
 
 		v += difference;
 	}

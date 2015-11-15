@@ -21,8 +21,8 @@ void FConstructorStatics::Initialize()
 	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Obj_Stc_Cocoon_S_2(TEXT("Blueprint'/Game/Origami/Blueprints/Actors/Cocoons/Bt_Act_Cocoon_S_2.Bt_Act_Cocoon_S_2'"));
 	Objects.Add(TEXT("/Game/Origami/Blueprints/Actors/Cocoons/Bt_Act_Cocoon_S_2.Bt_Act_Cocoon_S_2"), Obj_Stc_Cocoon_S_2.Get());
 
-	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Bt_Act_OrbGroup(TEXT("Blueprint'/Game/Origami/Blueprints/Actors/Bt_Act_OrbGroup.Bt_Act_OrbGroup'"));
-	Objects.Add(TEXT("/Game/Origami/Blueprints/Actors/Bt_Act_OrbGroup.Bt_Act_OrbGroup"), Bt_Act_OrbGroup.Get());
+	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Bt_Act_OrbGroup(TEXT("Blueprint'/Game/Origami/Objects/Orb/Bt_Act_OrbGroup.Bt_Act_OrbGroup'"));
+	Objects.Add(TEXT("/Game/Origami/Objects/Orb/Bt_Act_OrbGroup.Bt_Act_OrbGroup"), Bt_Act_OrbGroup.Get());
 
 	ConstructorHelpers::FObjectFinderOptional<class UBlueprint> Bt_ActionPrompt(TEXT("Blueprint'/Game/Origami/Blueprints/Hud/Bt_ActionPrompt.Bt_ActionPrompt'"));
 	Objects.Add(TEXT("/Game/Origami/Blueprints/Hud/Bt_ActionPrompt.Bt_ActionPrompt"), Bt_ActionPrompt.Get());
