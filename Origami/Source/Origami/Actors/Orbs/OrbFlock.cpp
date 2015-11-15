@@ -42,6 +42,9 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 	
 }
 
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Events
+
 void AOrbFlock::BeginPlay()
 {
 	this->StaticMeshInstanceComponent->SetStaticMesh(Mesh);
@@ -128,6 +131,9 @@ void AOrbFlock::Tick(float deltaSeconds)
 	StaticMeshInstanceComponent->UpdateBounds();
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+// Gameplay
 
 FRotator AOrbFlock::FindLookAtRotation(FVector start, FVector end)
 {
