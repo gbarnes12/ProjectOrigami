@@ -115,8 +115,11 @@ void ACocoon::Interact(AOrigamiCharacter* player)
 		return;
 
 	//this->Orbs->AttachSocket(player);
-
-	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true);
+	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true); //TODO: Should somehow catch if player already has max number of orbs before blindly send orbs on their way?
 	player->DisableInput(Cast<APlayerController>(player->GetController()));
+	
+	//Play calling orb animation
+	player->bIsCallingOrbs = true;
+
 	this->Orbs = NULL;
 }

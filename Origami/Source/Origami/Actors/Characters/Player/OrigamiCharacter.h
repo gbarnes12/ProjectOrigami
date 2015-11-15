@@ -67,6 +67,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter)
+	bool bIsCallingOrbs;
+
 public:
 	/*  */
 	UFUNCTION(BlueprintCallable, Category = TDLHelpers)

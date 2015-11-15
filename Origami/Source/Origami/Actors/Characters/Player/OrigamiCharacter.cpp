@@ -68,6 +68,8 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	}
 
 	this->Orbs.Reserve(3);
+
+	bIsCallingOrbs = false;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -202,13 +204,15 @@ void AOrigamiCharacter::CheckIfIsInInteractionRange()
 
 void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
 {
+	//End calling orbs animation
+	this->bIsCallingOrbs = false;
+	this->EnableInput(Cast<APlayerController>(this->GetController()));
+
 	if (this->Orbs.Num() == 3)
-		return;
+		return;	
 
 	orbGroup->ChangeColor(this->CurrentColor);
-
 	this->Orbs.Push(orbGroup);
-	this->EnableInput(Cast<APlayerController>(this->GetController()));
 }
 
 void AOrigamiCharacter::ChangeColor(FColor color)

@@ -63,7 +63,7 @@ FSplinePointInfo* AOrbPath::IsNearSplinePoint(float currentDistance, float maxDi
 		if (info.bHasBeenVisited)
 			continue;
 
-		if (info.PointIndex >= this->OrbPath->GetNumSplinePoints())
+		if (info.PointIndex >= this->OrbPath->GetNumberOfSplinePoints())
 			return NULL;
 
 		float distance = this->OrbPath->GetDistanceAlongSplineAtSplinePoint(info.PointIndex);
