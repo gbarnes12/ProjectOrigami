@@ -27,7 +27,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->bIsTargetMoving = false;
 	this->bIsGenerated = false;
 	this->bIsPaused = false;
-	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Meshes/OrbMesh.OrbMesh'");
+	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Objects/Orb/Visual/OrbMesh.OrbMesh'");
 	this->OrbPath = NULL;
 	
 	// The socket functions as 
@@ -147,7 +147,7 @@ void AOrbGroup::GenerateOrbs()
 		return;
 	}
 
-	FString particleSystemName = TEXT("StaticMesh'/Game/Origami/Particles/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail'");
+	FString particleSystemName = TEXT("StaticMesh'/Game/Origami/Objects/Orb/Visual/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail'");
 
 	UParticleSystem* ps = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), NULL, *particleSystemName));
 	if (!ps)

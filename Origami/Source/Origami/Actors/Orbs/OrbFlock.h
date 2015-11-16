@@ -64,9 +64,6 @@ struct FFlockSimulationSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		float FollowWeight = 1.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
-		float SeparationRadius = 10.0f;
 };
 
 

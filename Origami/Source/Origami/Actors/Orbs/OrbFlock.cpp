@@ -42,6 +42,9 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 	
 }
 
+///////////////////////////////////////////////////////////////////////////
+// UE4 Native Events
+
 void AOrbFlock::BeginPlay()
 {
 	this->StaticMeshInstanceComponent->SetStaticMesh(Mesh);
@@ -73,39 +76,37 @@ void AOrbFlock::Tick(float deltaSeconds)
 		FVector velocity = FVector(0, 0, 0);
 		if (orb.bIsLeader)
 		{
-			velocity += this->ComputeWanderVelocity(orb);
-			orb.ElapsedTimeSinceTargetUpdate += deltaSeconds;
 			DrawDebugDirectionalArrow(GetWorld(), pos, orb.Target, 100.0f, FColor::Red, false, -1.0f, '\000', 5.0f);
 		}
-		else
-		{
-			FVector follow = ComputeFollow(orb) ;
-			FVector alignment = ComputeAlignment(orb);
-			FVector cohesion = ComputeCohesion(orb);
-			FVector separation = ComputSeparation(orb) ;
 
+		orb.ElapsedTimeSinceTargetUpdate += deltaSeconds;
 
-			if (Simulation.FollowWeight != 0.0)
-				velocity += follow * Simulation.FollowWeight;
+		FVector wander = ComputeWanderVelocity(orb);
+	//	FVector follow = ComputeFollow(orb) ;
+		FVector alignment = ComputeAlignment(orb);
+		FVector cohesion = ComputeCohesion(orb);
+		FVector separation = ComputSeparation(orb) ;
+
+		velocity += wander;
+
+		//if (Simulation.FollowWeight != 0.0)
+	//		velocity += follow * Simulation.FollowWeight;
 			
-			if (Simulation.CohesionWeight != 0.0)
-				velocity += cohesion  * Simulation.CohesionWeight;
+		if (Simulation.CohesionWeight != 0.0)
+			velocity += cohesion  * Simulation.CohesionWeight;
 
-			if (Simulation.AlignmentWeight != 0.0)
-				velocity += alignment  * Simulation.AlignmentWeight;
+		if (Simulation.AlignmentWeight != 0.0)
+			velocity += alignment  * Simulation.AlignmentWeight;
 
-			if (Simulation.SeparationWeight != 0.0)
-				velocity += separation * Simulation.SeparationWeight;
-		}
+		if (Simulation.SeparationWeight != 0.0)
+			velocity += separation * Simulation.SeparationWeight;
 
 		velocity = velocity.GetClampedToSize(0.0f, 100.0f);
 
 		FVector targetVelocity = orb.Velocity + velocity;
 
-		// rotate the flocker towards the velocity direction vector
-		// get the rotation value for our desired target velocity (i.e. if we were in that direction)
 		FRotator rot = FindLookAtRotation(orb.Transform.GetLocation(), orb.Transform.GetLocation() + targetVelocity);
-		// lerp our current rotation towards the desired velocity vector based on rotationspeed * time
+	
 		FRotator final = FMath::RInterpTo(orb.Transform.Rotator(), rot, deltaSeconds, 0.3f);
 		orb.Transform.SetRotation(final.Quaternion());
 
@@ -123,13 +124,14 @@ void AOrbFlock::Tick(float deltaSeconds)
 
 		orb.Transform.SetLocation(orb.Transform.GetLocation() + orb.Velocity * deltaSeconds);
 		StaticMeshInstanceComponent->UpdateInstanceTransform(orb.MeshInstanceId, orb.Transform, true, true);
-
-		
 	}
 
 	StaticMeshInstanceComponent->UpdateBounds();
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+// Gameplay
 
 FRotator AOrbFlock::FindLookAtRotation(FVector start, FVector end)
 {
@@ -206,9 +208,6 @@ FVector AOrbFlock::ComputSeparation(FOrbFlockMember& member)
 		FVector difference = member.Transform.GetLocation() - this->Orbs[i].Transform.GetLocation();
 		float scale = difference.Size();
 		difference.Normalize();
-
-		//if (scale > 0.0f)
-		//	difference = difference * (Simulation.SeparationRadius / scale);
 
 		v += difference;
 	}

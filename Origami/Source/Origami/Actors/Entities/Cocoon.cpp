@@ -69,7 +69,7 @@ void ACocoon::BeginPlay()
 	if (bSpawnOrbsAtStartup)
 	{
 		// Now we need to spawn the OrbGroup :)
-		AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
+		AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Objects/Orb/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
 		if (!IsValid(orbGroup))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));
@@ -80,7 +80,7 @@ void ACocoon::BeginPlay()
 		this->Orbs->AttachSocket(this);
 	}
 
-	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Hud/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"), false);
+	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Objects/UI/Hud/ActionPrompt/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"), false);
 	if (!IsValid(this->ActionButtonPrompt))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_ActionPrompt blueprint!"));
