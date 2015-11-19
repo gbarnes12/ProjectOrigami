@@ -48,6 +48,9 @@ struct FFlockSimulationSettings
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bUseCollisionAvoidance = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		float FlockMinSpeed = 10.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
@@ -68,7 +71,7 @@ struct FFlockSimulationSettings
 
 
 UCLASS(config = Game)
-class ORIGAMI_API AOrbFlock : public AActor
+class ORIGAMI_API AOrbFlock : public APawn
 {
 	GENERATED_BODY()
 
@@ -99,9 +102,11 @@ private:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
 
+	void CalculateNewTarget();
 	void AddFlockMember(const FTransform& transform, bool bIsLeader = false);
 	FVector GetRandomTarget();
 	FRotator FindLookAtRotation(FVector start, FVector end);
+	FVector ComputeAvoidance(FOrbFlockMember& member, FVector velocity, FVector target);
 	FVector ComputeWanderVelocity(FOrbFlockMember& member);
 	FVector ComputeAlignment(FOrbFlockMember& member);
 	FVector ComputSeparation(FOrbFlockMember& member);
