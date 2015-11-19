@@ -27,7 +27,7 @@ AOrbGroup::AOrbGroup(const FObjectInitializer& ObjectInitializer)
 	this->bIsTargetMoving = false;
 	this->bIsGenerated = false;
 	this->bIsPaused = false;
-	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Objects/Orb/Visual/OrbMesh.OrbMesh'");
+	this->OrbMeshFileName = TEXT("StaticMesh'/Game/Origami/Objects/Orb/Visual/Obj_Stc_Orb.Obj_Stc_Orb'");
 	this->OrbPath = NULL;
 	
 	// The socket functions as 
