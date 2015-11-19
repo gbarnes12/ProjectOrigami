@@ -32,7 +32,7 @@ void AOrbPath::BeginPlay()
 
 	if (this->bSpawnOrbGroupAtStartup)
 	{
-		AActor* entity = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Blueprints/Actors/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
+		AActor* entity = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Objects/Orb/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
 		if (!IsValid(entity))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));

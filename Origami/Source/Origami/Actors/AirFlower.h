@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Actors/Characters/Player/OrigamiCharacter.h"
+#include "Components/AirFlowComponent.h"
 #include "GameFramework/Actor.h"
 #include "AirFlower.generated.h"
 
@@ -18,6 +19,10 @@ public:
 	// Mesh Component
 	UPROPERTY(EditAnywhere)
 		USkeletalMeshComponent* Mesh;
+
+	// The component which is capable for the force addition
+	UPROPERTY(EditAnywhere)
+		UAirFlowComponent* AirFlow;
 
 	/*UE4 Native Events*/
 	virtual void BeginPlay() override;
