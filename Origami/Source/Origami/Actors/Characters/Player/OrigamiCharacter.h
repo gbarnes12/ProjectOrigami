@@ -8,6 +8,9 @@ class AOrigamiCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	/* The character dies, when he falls of the edge */
+	bool bIsDead = false;
+
 	/* Handle to the timer that will adjust the speed periodically */
 	struct FTimerHandle FindAimTimeHandle;
 
@@ -69,6 +72,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter)
 	bool bIsCallingOrbs;
+
+	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
+	float DeathHeight = -400;
 
 public:
 	/*  */
@@ -153,5 +159,10 @@ private:
 	/* Tells the orbs to stop moving around the path or to start again! */
 	void SetIsTargetMovingForOrbs(bool value);
 
+	/* In case, the character is below the death height, he dies */
+	bool IsDead();
+
+	/* Creates a visual feedback, which is triggered, when the character dies */
+	void DeathEffects();
 };
 
