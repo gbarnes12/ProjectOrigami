@@ -19,7 +19,7 @@ AAirFlower::AAirFlower()
 	AirFlow = CreateDefaultSubobject<UAirFlowComponent>(TEXT("AirFlowComponent"));
 
 	// Find this mesh in the source folders
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CubeVisualAsset(TEXT("/Game/Origami/Meshes/AirFlower/air_flower.air_flower"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CubeVisualAsset(TEXT("/Game/Origami/Objects/AirFlower/Controller/AirFlowerSkeletalMesh.AirFlowerSkeletalMesh"));
 	
 	// If it is found, set it as the mesh
 	if (CubeVisualAsset.Succeeded())
