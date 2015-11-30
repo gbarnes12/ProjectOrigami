@@ -120,6 +120,60 @@ FVector FOrbFlockMember::ComputeSteerTo(FVector target, float maxSpeed, float ma
 	return v;
 }
 
+FVector FOrbFlockMember::ComputeAvoidance(AActor* actor, UWorld* world,  FVector Target, float maxSpeed, float maxForce)
+{
+	FVector v = FVector::ZeroVector;
+	if (world == nullptr) 
+	{
+		return v;
+	}
+	
+	FVector velocity = this->Velocity;
+
+	velocity.Normalize();
+
+	FVector start = this->Transform.GetLocation();
+	FVector ahead = this->Transform.GetLocation() + velocity * 100.0;
+
+	FCollisionQueryParams rvTraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, actor);
+	rvTraceParams.bTraceComplex = true;
+	rvTraceParams.bTraceAsyncScene = true;
+	rvTraceParams.bReturnPhysicalMaterial = false;
+
+	FHitResult rvHit(ForceInit);
+
+	world->LineTraceSingleByChannel(
+		rvHit, //result
+		start, //start
+		ahead, //end
+		ECollisionChannel::ECC_Visibility, //collision channel
+		rvTraceParams);
+
+	//DrawDebugDirectionalArrow(world, start, ahead, 100.0f, FColor::Red, false, -1.0f, '\000', 2.0f);
+
+	if (rvHit.bBlockingHit)
+	{
+		if (rvHit.GetActor()) {
+		
+			v = this->Transform.GetLocation() - rvHit.ImpactPoint;
+			v.Normalize();
+
+#ifdef USE_OLD_COLLISION
+			v = ComputeSteerTo(rvHit.ImpactPoint + v * 300.0f, maxSpeed, maxForce);
+#else
+			
+			v = rvHit.ImpactPoint + v * 700.0f;
+			
+			DrawDebugDirectionalArrow(world, rvHit.ImpactPoint, v, 100.0f, FColor::Green, false, -1.0f, '\000', 5.0f);
+			return v;
+#endif
+		}
+	}
+
+	
+
+	return v;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -156,7 +210,7 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		this->StaticMeshInstanceComponent->AttachParent = RootComponent;
 		
 
-		UPointLightComponent* Light = ObjectInitializer.CreateDefaultSubobject<UPointLightComponent>(this, TEXT("PointLight"));
+		Light = ObjectInitializer.CreateDefaultSubobject<UPointLightComponent>(this, TEXT("PointLight"));
 		if (Light)
 		{
 			Light->SetRelativeRotation(FRotator::ZeroRotator);
@@ -256,17 +310,46 @@ void AOrbFlock::AddFlockMember(const FTransform& transform, bool bIsLeader)
 
 void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 {
+	// Check for collision event if so we need to calculate an avoidance target
+	// and if we need to avoid set the new target temporary till we reached it!
+#ifndef USE_OLD_COLLISION
+	if (!bCollidedWithObject)
+	{
+		FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce);
+		if (!avoidance.IsZero())
+		{
+			FOrbFlockMember& leader = this->Orbs[0];
+			this->TempRealTarget = leader.Target;
+			this->bCollidedWithObject = true;
+			leader.Target = avoidance;
+
+			if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+			{
+				this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), leader.Target);
+			}
+		}
+		
+	}
+#endif
+
 	FVector cohesion = member.ComputeCohesion(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.CohesionWeight;
 	FVector alignment = member.ComputeAlignment(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.AlignmentWeight;
 	FVector separation = member.ComputeSeparation(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.SeparationRadius, Simulation.MaxForce) * this->Simulation.SeparationWeight;
-	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
-	FVector acceleration = separation + alignment + cohesion + steerTo;
+	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, (this->bCollidedWithObject) ?  1000.0f : Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
+	FVector acceleration = FVector::ZeroVector;
+
+#ifdef USE_OLD_COLLISION
+	FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f);
+	acceleration = separation + alignment + cohesion + steerTo + avoidance;
+#else
+	acceleration = separation + alignment + cohesion + steerTo;
+#endif
 
 	member.Velocity += acceleration;
 	member.Velocity = member.Velocity.GetClampedToMaxSize(this->Simulation.FlockMaxSpeed);
 
+	// we calculate the rotation by finding the direction we look to by the calculated velocity!
 	FRotator rot = FindLookAtRotation(member.Transform.GetLocation(), member.Transform.GetLocation() + member.Velocity);
-	//FRotator final = FMath::RInterpTo(orb.Transform.Rotator(), rot, deltaSeconds, 0.3f);
 
 	member.Transform.SetRotation(rot.Quaternion());
 	member.Transform.SetLocation(member.Transform.GetLocation() + member.Velocity * deltaSeconds);
@@ -286,7 +369,10 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 
 	StaticMeshInstanceComponent->UpdateInstanceTransform(member.MeshInstanceId, member.Transform, true, true);
 	
-	if (member.bIsLeader) 
+	if (member.bIsLeader)
+		this->Light->SetWorldLocation(member.Transform.GetLocation());
+
+	if (member.bIsLeader && Simulation.bMoveActor) 
 		this->SetActorLocation(member.Transform.GetLocation());
 
 	if (Debug.bShowDebug)
@@ -299,8 +385,14 @@ void AOrbFlock::DrawDebugInformation(FOrbFlockMember& member, FVector cohesion, 
 	alignment.Normalize();
 	separation.Normalize();
 
-	if (member.bIsLeader && Debug.bShowTarget)
-		DrawDebugDirectionalArrow(GetWorld(), member.Transform.GetLocation(), member.Target, 100.0f, FColor::Magenta, false, -1.0f, '\000', 5.0f);
+	if (member.bIsLeader)
+	{
+		if(Debug.bShowTarget)
+			DrawDebugDirectionalArrow(GetWorld(), member.Transform.GetLocation(), member.Target, 100.0f, FColor::Magenta, false, -1.0f, '\000', 5.0f);
+
+		DrawDebugSphere(GetWorld(), member.Transform.GetLocation(), Simulation.NeighborRadius, 10, FColor::Green, false, -1.0f, '\000');
+	}
+
 
 	if(Debug.bShowCohesion)
 		DrawDebugDirectionalArrow(GetWorld(), member.Transform.GetLocation(), member.Transform.GetLocation() + cohesion * 50, 100.0f, FColor::Green, false, -1.0f, '\000', Debug.ArrowScale);
@@ -315,12 +407,43 @@ void AOrbFlock::DrawDebugInformation(FOrbFlockMember& member, FVector cohesion, 
 		DrawDebugDirectionalArrow(GetWorld(), member.Transform.GetLocation(), member.Transform.GetLocation() + member.Velocity, 100.0f, FColor::Black, false, -1.0f, '\000', Debug.ArrowScale);
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Blueprint callable
+
+bool AOrbFlock::IsLeaderAtLocation(FVector location, float thresholdDistance)
+{
+	if (this->Orbs.Num() == 0)
+		return false;
+
+	FOrbFlockMember& leader = this->Orbs[0];
+
+	if (!leader.bIsLeader)
+		return false;
+
+	FVector leaderLocation = leader.Transform.GetLocation();
+
+	float distance = (leaderLocation - location).Size();
+	if (distance <= thresholdDistance) {
+		return true;
+	}
+
+	return false;
+}
+
 FVector AOrbFlock::CalculateNewTarget()
 {
 	FOrbFlockMember& leader = this->Orbs[0];
-	FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
 
-	leader.Target = this->GetRandomTarget() + this->GetActorLocation();
+	if (this->bCollidedWithObject) 
+	{
+		leader.Target = this->TempRealTarget;
+		this->bCollidedWithObject = false;
+	}
+	else 
+	{
+		FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
+		leader.Target = this->GetRandomTarget() + this->GetActorLocation();
+	}
 
 	return leader.Target;
 }
