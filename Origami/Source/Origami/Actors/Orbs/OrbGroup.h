@@ -5,9 +5,12 @@
 #include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 #include "OrbGroup.generated.h"
 
-enum EOrbMode {
-	FreeRoam = 0,
-	Attached = 1
+UENUM(BlueprintType)
+enum class EOrbMode : uint8 
+{
+	
+	FreeRoam UMETA(DisplayName = "Roam"),
+	Attached UMETA(DisplayName = "Attached")
 };
 
 enum EActorType {

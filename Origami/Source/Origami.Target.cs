@@ -20,6 +20,7 @@ public class OrigamiTarget : TargetRules
 		ref List<string> OutExtraModuleNames
 		)
 	{
-		OutExtraModuleNames.Add("Origami");
+        
+        OutExtraModuleNames.Add("Origami");
 	}
 }
