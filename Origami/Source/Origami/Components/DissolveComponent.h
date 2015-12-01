@@ -11,10 +11,16 @@ class ORIGAMI_API UDissolveComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-	UMaterialInstanceDynamic* TheMaterial;
-	bool bDissolve = false;
 	
-	float tempDissolveValue = 0.0f;
+	UPROPERTY()
+	UMaterial* BaseMaterial;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* MaterialInstance;
+
+	UPROPERTY(EditAnywhere)
+	bool bDissolve = false;
+	float DissolveValue = 0.0f;
 
 public:	
 	// Sets default values for this component's properties
