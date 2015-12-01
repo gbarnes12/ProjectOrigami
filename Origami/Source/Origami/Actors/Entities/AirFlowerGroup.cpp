@@ -3,23 +3,29 @@
 #include "Origami.h"
 #include "AirFlowerGroup.h"
 
-///////////////////////////////////////////////////////////////////////////
-// AirFlowerGroup
+
+// Sets default values
 AAirFlowerGroup::AAirFlowerGroup()
-	: Super()
 {
-	// Set this to true since the player needs to be able to interact with us
-	this->bIsInteractable = true;
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	// create a custom root scene component (this seems to cause less errors somehow
+	USceneComponent* rootSceneComp = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	if (IsValid(rootSceneComp))
+	{
+		rootSceneComp->RelativeLocation = FVector::ZeroVector;
+		this->RootComponent = rootSceneComp;
+	}
 }
 
-///////////////////////////////////////////////////////////////////////////
-// UE4 Native Event
+// Called when the game starts or when spawned
 void AAirFlowerGroup::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// The aim box has to include all the airflowers
-	float minX = TNumericLimits<float>::Max();
+	/*float minX = TNumericLimits<float>::Max();
 	float maxX = TNumericLimits<float>::Lowest();
 	float minY = TNumericLimits<float>::Max();
 	float maxY = TNumericLimits<float>::Lowest();
@@ -68,41 +74,23 @@ void AAirFlowerGroup::BeginPlay()
 	this->AimBox->SetBoxExtent(FVector(rangeX, rangeY, rangeZ));
 
 	// Set the location of the AimBox to the middle of the FlowerGroup
-	this->AimBox->SetWorldLocation(FVector((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2));
+	this->AimBox->SetWorldLocation(FVector((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2));*/
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Gameplay
-void AAirFlowerGroup::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
+// Called every frame
+void AAirFlowerGroup::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+// Orbs might interact with this actor
+void AAirFlowerGroup::Interact()
 {
 	// Call the method for all the GroupMembers
 	for (TArray<AAirFlower*>::TConstIterator PkgIter(AirFlowers); PkgIter; ++PkgIter)
 	{
 		// Access the element at the current position of the iterator with the * operator
 		AAirFlower* airFlower = *PkgIter;
-		airFlower->EnterInteractionRange(player, collisionPoint);
-	}
-}
-
-void AAirFlowerGroup::LeaveInteractionRange(AOrigamiCharacter* player)
-{
-	// Call the method for all the GroupMembers
-	for (TArray<AAirFlower*>::TConstIterator PkgIter(AirFlowers); PkgIter; ++PkgIter)
-	{
-		// Access the element at the current position of the iterator with the * operator
-		AAirFlower* airFlower = *PkgIter;
-		airFlower->LeaveInteractionRange(player);
-	}
-}
-
-
-void AAirFlowerGroup::Interact(AOrigamiCharacter* player)
-{
-	// Call the method for all the GroupMembers
-	for (TArray<AAirFlower*>::TConstIterator PkgIter(AirFlowers); PkgIter; ++PkgIter)
-	{
-		// Access the element at the current position of the iterator with the * operator
-		AAirFlower* airFlower = *PkgIter;
-		airFlower->Interact(player);
+		airFlower->Interact();
 	}
 }

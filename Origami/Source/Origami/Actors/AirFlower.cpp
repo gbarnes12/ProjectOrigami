@@ -2,11 +2,10 @@
 
 #include "Origami.h"
 #include "AirFlower.h"
-#include "Actors/Entity.h"
 #include "Components/AirFlowComponent.h"
 
-///////////////////////////////////////////////////////////////////////////
-// AirFlower
+
+// Sets default values
 AAirFlower::AAirFlower()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -28,27 +27,20 @@ AAirFlower::AAirFlower()
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////
-// UE4 Native Event
+// Called when the game starts or when spawned
 void AAirFlower::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Gameplay
-void AAirFlower::EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint)
+// Called every frame
+void AAirFlower::Tick(float DeltaTime)
 {
-
+	Super::Tick(DeltaTime);
 }
 
-void AAirFlower::LeaveInteractionRange(AOrigamiCharacter* player)
+// Orbs might interact with this actor
+void AAirFlower::Interact()
 {
-
-}
-
-
-void AAirFlower::Interact(AOrigamiCharacter* player)
-{
-
+	
 }

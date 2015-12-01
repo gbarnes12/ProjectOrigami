@@ -3,14 +3,11 @@
 #pragma once
 
 #include "Actors/AirFlower.h"
-#include "Actors/Entity.h"
+#include "GameFramework/Actor.h"
 #include "AirFlowerGroup.generated.h"
 
-/**
-*
-*/
 UCLASS()
-class ORIGAMI_API AAirFlowerGroup : public AEntity
+class ORIGAMI_API AAirFlowerGroup : public AActor
 {
 	GENERATED_BODY()
 
@@ -20,15 +17,14 @@ public:
 
 	// A collection of all by the group included AirFlowers
 	UPROPERTY(EditAnywhere, Category = SubElements)
-	TArray<AAirFlower*> AirFlowers;
+		TArray<AAirFlower*> AirFlowers;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Can be called whenever the player interacts with this entity (via Key Press: Interact).
-	virtual void Interact(AOrigamiCharacter* player) override;
+	// Called every frame
+	virtual void Tick(float DeltaSeconds) override;
 
-	// Is called whenever the player is within interaction range and this entity is hit by his ray.
-	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint) override;
-	virtual void LeaveInteractionRange(AOrigamiCharacter* player) override;
+	// Orbs might interact with this actor
+	void Interact();
 };

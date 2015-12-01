@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "Components/AirFlowComponent.h"
 #include "GameFramework/Actor.h"
 #include "AirFlower.generated.h"
@@ -24,14 +23,12 @@ public:
 	UPROPERTY(EditAnywhere)
 		UAirFlowComponent* AirFlow;
 
-	/*UE4 Native Events*/
+	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Functions to interact with this object
-	void Interact(AOrigamiCharacter* player);
-	void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint);
-	void LeaveInteractionRange(AOrigamiCharacter* player);
+	// Called every frame
+	virtual void Tick(float DeltaSeconds) override;
 
-protected:
-	class AActor* ActionButtonPrompt;
+	// Orbs might interact with this actor
+	void Interact();
 };
