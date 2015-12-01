@@ -42,7 +42,7 @@ AOrigamiCharacter::AOrigamiCharacter(const FObjectInitializer& ObjectInitializer
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.f;
-	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->AirControl = 0.7f;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -87,13 +87,21 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
-	//if (CameraBoom->TargetArmLength != this->TargetZoom)
-	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, this->TargetZoom, deltaSeconds, 1.3f);
+	// Is the character dead?
+	if (IsDead())
+	{
+		FollowCamera->PostProcessSettings.VignetteIntensity *= 1.1f;
+	}
+	else
+	{
+		//if (CameraBoom->TargetArmLength != this->TargetZoom)
+		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, this->TargetZoom, deltaSeconds, 1.3f);
 
-	if (SideAmount == 0.0f && ForwardAmount == 0.0f)
-		SetIsTargetMovingForOrbs(false);
-	else 
-		SetIsTargetMovingForOrbs(true);
+		if (SideAmount == 0.0f && ForwardAmount == 0.0f)
+			SetIsTargetMovingForOrbs(false);
+		else
+			SetIsTargetMovingForOrbs(true);
+	}
 }
 
 
@@ -229,12 +237,40 @@ void AOrigamiCharacter::ChangeColor(FColor color)
 	}
 }
 
-void AOrigamiCharacter::SetIsTargetMovingForOrbs(bool value) 
+void AOrigamiCharacter::SetIsTargetMovingForOrbs(bool value)
 {
-	for (int i = 0; i < this->Orbs.Num(); i++) 
+	for (int i = 0; i < this->Orbs.Num(); i++)
 	{
 		this->Orbs[i]->bIsTargetMoving = value;
 	}
+}
+
+bool AOrigamiCharacter::IsDead()
+{
+	if (bIsDead)
+		return true;
+
+	// In case the character is below the death height, he dies
+	if (this->GetActorLocation().Z < DeathHeight)
+	{
+		// When dead, the player is no longer able to interact
+		this->DisableInput(GetWorld()->GetFirstPlayerController());
+
+		// The camera should stay in position
+		FollowCamera->DetachFromParent(true);
+
+		// Execute the death method
+		DeathEffects();
+
+		return true;
+	}
+
+	return false;
+}
+
+void AOrigamiCharacter::DeathEffects()
+{
+	FollowCamera->PostProcessSettings.bOverride_VignetteIntensity = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
