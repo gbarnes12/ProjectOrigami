@@ -31,8 +31,5 @@ bool UFallingObjectComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 // Function to check for ability to pull the trigger
 bool UFallingObjectComponent::IsAbleToTrigger(AOrbGroup* IncomingOrbs)
 {
-	if (Super::TriggerOrbInteraction(IncomingOrbs))
-		return true;
-
-	return false;
+	return Super::IsAbleToTrigger(IncomingOrbs);
 }

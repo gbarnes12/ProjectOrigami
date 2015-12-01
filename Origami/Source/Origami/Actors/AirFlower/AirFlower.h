@@ -2,25 +2,34 @@
 
 #pragma once
 
+#include "Components/AirFlowComponent.h"
+#include "Actors/Orbs/OrbGroup.h"
 #include "GameFramework/Actor.h"
-#include "ClimbingPlant.generated.h"
+#include "AirFlower.generated.h"
 
 UCLASS()
-class ORIGAMI_API AClimbingPlant : public AActor
+class ORIGAMI_API AAirFlower : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AClimbingPlant();
+	AAirFlower();
 
 	// Mesh Component
 	UPROPERTY(EditAnywhere)
 		USkeletalMeshComponent* Mesh;
 
+	// The component which is capable for the force addition
+	UPROPERTY(EditAnywhere)
+		UAirFlowComponent* AirFlow;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
+
+	// Orbs might interact with this actor
+	virtual void TriggerOrbInteraction(AOrbGroup* IncomingOrbs);
 };

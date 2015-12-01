@@ -2,6 +2,7 @@
 
 #include "Origami.h"
 #include "OrbTriggerComponent.h"
+#include "Actors/OrbInteractable.h"
 
 
 // Sets default values for this component's properties
@@ -13,13 +14,11 @@ UOrbTriggerComponent::UOrbTriggerComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-
 // Called when the game starts
 void UOrbTriggerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
 
 // Called every frame
 void UOrbTriggerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -27,16 +26,22 @@ void UOrbTriggerComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-
 // Trigger function called by incoming orbs
 bool UOrbTriggerComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 {
 	if (IsAbleToTrigger(IncomingOrbs))
-		return true;
+	{
+		// If the owner object is orb interactable, call the trigger function
+		AActor* owner = GetOwner();
+		if (owner->IsA(AOrbInteractable::StaticClass()))
+		{
+			Cast<AOrbInteractable>(owner)->TriggerOrbInteraction(IncomingOrbs);
+			return true;
+		}
+	}
 
 	return false;
 }
-
 
 // Function to check for ability to pull the trigger
 bool UOrbTriggerComponent::IsAbleToTrigger(AOrbGroup* IncomingOrbs)

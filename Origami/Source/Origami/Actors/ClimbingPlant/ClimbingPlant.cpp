@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Components/Orbs/OrbTriggerBlueComponent.h"
 #include "Origami.h"
 #include "ClimbingPlant.h"
 
@@ -21,6 +22,9 @@ AClimbingPlant::AClimbingPlant()
 	{
 		Mesh->SetSkeletalMesh(CubeVisualAsset.Object);
 	}
+
+	// The component triggered by the orbs has to be adjusted
+	TriggerComponent = CreateDefaultSubobject<UOrbTriggerBlueComponent>(TEXT("OrbTriggerBlueComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -33,5 +37,11 @@ void AClimbingPlant::BeginPlay()
 void AClimbingPlant::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+// Orbs might interact with this actor
+void AClimbingPlant::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+{
+	
 }
 

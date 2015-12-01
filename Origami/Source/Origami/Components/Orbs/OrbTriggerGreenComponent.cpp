@@ -22,7 +22,7 @@ void UOrbTriggerGreenComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 bool UOrbTriggerGreenComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 {
 	if (IsAbleToTrigger(IncomingOrbs))
-		return true;
+		return Super::TriggerOrbInteraction(IncomingOrbs);
 
 	return false;
 }
@@ -31,8 +31,5 @@ bool UOrbTriggerGreenComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 // Function to check for ability to pull the trigger
 bool UOrbTriggerGreenComponent::IsAbleToTrigger(AOrbGroup* IncomingOrbs)
 {
-	if (Super::TriggerOrbInteraction(IncomingOrbs) && IncomingOrbs->OrbColor == FColor::Green)
-		return true;
-
-	return false;
+	return Super::IsAbleToTrigger(IncomingOrbs) && IncomingOrbs->OrbColor == FColor::Green;
 }

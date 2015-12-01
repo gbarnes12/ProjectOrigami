@@ -40,7 +40,7 @@ void AAirFlower::Tick(float DeltaTime)
 }
 
 // Orbs might interact with this actor
-void AAirFlower::Interact()
+void AAirFlower::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 {
-	
+
 }

@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Components/Orbs/OrbTriggerGreenComponent.h"
 #include "Origami.h"
 #include "AirFlowerGroup.h"
 
@@ -17,6 +18,9 @@ AAirFlowerGroup::AAirFlowerGroup()
 		rootSceneComp->RelativeLocation = FVector::ZeroVector;
 		this->RootComponent = rootSceneComp;
 	}
+
+	// The component triggered by the orbs has to be adjusted
+	TriggerComponent = CreateDefaultSubobject<UOrbTriggerGreenComponent>(TEXT("OrbTriggerGreenComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -84,13 +88,13 @@ void AAirFlowerGroup::Tick(float DeltaTime)
 }
 
 // Orbs might interact with this actor
-void AAirFlowerGroup::Interact()
+void AAirFlowerGroup::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 {
 	// Call the method for all the GroupMembers
 	for (TArray<AAirFlower*>::TConstIterator PkgIter(AirFlowers); PkgIter; ++PkgIter)
 	{
 		// Access the element at the current position of the iterator with the * operator
 		AAirFlower* airFlower = *PkgIter;
-		airFlower->Interact();
+		airFlower->TriggerOrbInteraction(IncomingOrbs);
 	}
 }
