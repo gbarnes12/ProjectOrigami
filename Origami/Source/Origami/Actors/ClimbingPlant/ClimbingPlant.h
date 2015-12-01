@@ -18,6 +18,14 @@ public:
 	UPROPERTY(EditAnywhere)
 		USkeletalMeshComponent* Mesh;
 
+	// How long should it take to unfold the platform? (in seconds)
+	UPROPERTY(EditAnywhere, Category = ClimbingPlant)
+		float AscensionSpeed = 3;
+
+	// How long should it take to descend again? (in seconds)
+	UPROPERTY(EditAnywhere, Category = ClimbingPlant)
+		float TimeToDescend = 120;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
@@ -26,4 +34,14 @@ public:
 
 	// Orbs might interact with this actor
 	virtual void TriggerOrbInteraction(AOrbGroup* IncomingOrbs) override;
+
+private:
+	// Is the platform currently ascending?
+	bool bIsAscending = false;
+
+	// Is the platform currently descending?
+	bool bIsDescending = false;
+
+	// How long is the platform ascended yet?
+	float DescensionTimer = 0;
 };

@@ -9,15 +9,16 @@ AOrbInteractable::AOrbInteractable()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	// Create a new OrbTriggerComponent
-	TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerComponent"));
 }
 
 // Called when the game starts or when spawned
 void AOrbInteractable::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// If there is no TriggerComponent yet, set a default one
+	if (TriggerComponent == nullptr)
+		TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerComponent"));
 }
 
 // Called every frame

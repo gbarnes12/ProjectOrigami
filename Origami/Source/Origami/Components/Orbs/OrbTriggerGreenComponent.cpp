@@ -10,13 +10,11 @@ void UOrbTriggerGreenComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-
 // Called every frame
 void UOrbTriggerGreenComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
-
 
 // Trigger function called by incoming orbs
 bool UOrbTriggerGreenComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
@@ -26,7 +24,6 @@ bool UOrbTriggerGreenComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 
 	return false;
 }
-
 
 // Function to check for ability to pull the trigger
 bool UOrbTriggerGreenComponent::IsAbleToTrigger(AOrbGroup* IncomingOrbs)

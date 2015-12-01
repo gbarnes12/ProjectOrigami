@@ -5,9 +5,7 @@
 #include "Components/Orbs/OrbTriggerComponent.h"
 #include "OrbTriggerBlueComponent.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class ORIGAMI_API UOrbTriggerBlueComponent : public UOrbTriggerComponent
 {
