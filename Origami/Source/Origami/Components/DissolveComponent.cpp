@@ -29,14 +29,14 @@ void UDissolveComponent::BeginPlay()
 	// Find the actor's static mesh component(s)
 	AActor* Actor = GetOwner();
 
-	TArray<UStaticMeshComponent*> Components;
-	Actor->GetComponents<UStaticMeshComponent>(Components);
+	TArray<UMeshComponent*> Components;
+	Actor->GetComponents<UMeshComponent>(Components);
 
 	for (int32 i = 0; i<Components.Num(); i++)
 	{
 		// Assign the material instance
-		UStaticMeshComponent* StaticMeshComponent = Components[i];
-		StaticMeshComponent->SetMaterial(0, MaterialInstance);
+		UMeshComponent* MeshComponent = Components[i];
+		MeshComponent->SetMaterial(0, MaterialInstance);
 	}
 }
 
