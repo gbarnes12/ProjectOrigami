@@ -312,38 +312,44 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 {
 	// Check for collision event if so we need to calculate an avoidance target
 	// and if we need to avoid set the new target temporary till we reached it!
-#ifndef USE_OLD_COLLISION
-	if (!bCollidedWithObject)
+	if (Simulation.bUseCollision && !Simulation.bUseOldCollision)
 	{
-		FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce);
-		if (!avoidance.IsZero())
+		if (!bCollidedWithObject)
 		{
-			FOrbFlockMember& leader = this->Orbs[0];
-			this->TempRealTarget = leader.Target;
-			this->bCollidedWithObject = true;
-			leader.Target = avoidance;
-
-			if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce);
+			if (!avoidance.IsZero())
 			{
-				this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), leader.Target);
+				FOrbFlockMember& leader = this->Orbs[0];
+				this->TempRealTarget = leader.Target;
+				this->bCollidedWithObject = true;
+				leader.Target = avoidance;
+
+				if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+				{
+					this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), leader.Target);
+				}
 			}
 		}
-		
 	}
-#endif
 
 	FVector cohesion = member.ComputeCohesion(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.CohesionWeight;
 	FVector alignment = member.ComputeAlignment(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.AlignmentWeight;
 	FVector separation = member.ComputeSeparation(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.SeparationRadius, Simulation.MaxForce) * this->Simulation.SeparationWeight;
-	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, (this->bCollidedWithObject) ?  1000.0f : Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
+	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, (this->bCollidedWithObject) ? 1000.0f : Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
 	FVector acceleration = FVector::ZeroVector;
 
-#ifdef USE_OLD_COLLISION
-	FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f);
-	acceleration = separation + alignment + cohesion + steerTo + avoidance;
-#else
-	acceleration = separation + alignment + cohesion + steerTo;
-#endif
+	if (Simulation.bUseCollision)
+	{
+		if (Simulation.bUseOldCollision)
+		{
+			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f);
+			acceleration = separation + alignment + cohesion + steerTo + avoidance;
+		}
+		else 
+		{
+			acceleration = separation + alignment + cohesion + steerTo;
+		}
+	}
 
 	member.Velocity += acceleration;
 	member.Velocity = member.Velocity.GetClampedToMaxSize(this->Simulation.FlockMaxSpeed);

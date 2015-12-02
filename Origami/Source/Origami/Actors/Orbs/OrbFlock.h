@@ -82,6 +82,12 @@ struct FFlockSimulationSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		bool bMoveActor = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bUseCollision = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bUseOldCollision = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float NeighborRadius = 500.0f;
 
