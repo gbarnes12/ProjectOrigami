@@ -20,15 +20,15 @@ public:
 
 	// The maximum force added to the character being in the airflow (-980 is gravity per kg).
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float FlowStrength = 150000;
+		float FlowStrength = 600000;
 
 	// The maximum distance from the flower, where a force can be added. The further, the less force.
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float MaxDistance = 2000;
+		float MaxDistance = 600;
 
 	// The maximum angle in which the force is applied, it ends in a cone, where the force decreases in the edge regions.
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float MaxAngle = 45;
+		float MaxAngle = 60;
 
 	// Called when the game starts
 	virtual void BeginPlay() override;

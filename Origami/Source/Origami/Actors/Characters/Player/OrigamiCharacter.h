@@ -74,7 +74,7 @@ public:
 	bool bIsCallingOrbs;
 
 	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
-	float DeathHeight = -400;
+	float DeathHeight = -2000;
 
 public:
 	/*  */
