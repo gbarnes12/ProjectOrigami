@@ -73,6 +73,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter)
 	bool bIsCallingOrbs;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = OrigamiCharacter)
+	bool bIsSendingOrbs;
+
 	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
 	float DeathHeight = -2000;
 
