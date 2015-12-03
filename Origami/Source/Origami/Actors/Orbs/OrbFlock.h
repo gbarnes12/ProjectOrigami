@@ -28,11 +28,11 @@ public:
 		Trail = nullptr;
 	};
 
-	FVector ComputeAlignment(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
-	FVector ComputeSeparation(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
-	FVector ComputeCohesion(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeAlignment( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeSeparation( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeCohesion( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
 	FVector ComputeSteerTo(FVector Target, float maxSpeed, float maxForce);
-	FVector ComputeAvoidance(AActor* actor, UWorld* world, FVector Target, float maxSpeed, float maxForce);
+	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce);
 };
 
 USTRUCT()
@@ -170,7 +170,7 @@ private:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
 
-	
+	TArray<FOrbFlockMember> FindNeighbors(FOrbFlockMember& member);
 	void AddFlockMember(const FTransform& transform, bool bIsLeader = false);
 	void SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member);
 	void DrawDebugInformation(FOrbFlockMember& member, FVector cohesion, FVector separation, FVector alignment);

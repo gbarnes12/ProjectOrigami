@@ -15,22 +15,15 @@ FVector FOrbFlockMember::ComputeAlignment(TArray<FOrbFlockMember>& members, floa
 {
 	FVector v = FVector::ZeroVector;
 
-	int count = 0;
 	for (int i = 0; i < members.Num(); i++)
 	{
 		FOrbFlockMember& orb = members[i];
-		float distance = FVector::Dist(this->Transform.GetLocation(), orb.Transform.GetLocation());
-
-		if (distance > 0 && distance < neighborRadius)
-		{
-			v += members[i].Velocity;
-			count++;
-		}
+		v += members[i].Velocity;
 	}
 
-	if (count > 0)
+	if (members.Num() > 0)
 	{
-		v /= count;
+		v /= members.Num();
 		v = v.GetClampedToMaxSize(maxForce);
 	}
 
@@ -40,27 +33,21 @@ FVector FOrbFlockMember::ComputeAlignment(TArray<FOrbFlockMember>& members, floa
 FVector FOrbFlockMember::ComputeSeparation(TArray<FOrbFlockMember>& members, float maxSpeed, float separationRadius, float maxForce)
 {
 	FVector v = FVector::ZeroVector;
-	int count = 0;
 
 	for (int i = 0; i < members.Num(); i++)
 	{
 		FOrbFlockMember& orb = members[i];
-
 		float distance = FVector::Dist(this->Transform.GetLocation(), orb.Transform.GetLocation());
 
-		if (distance > 0 && distance < separationRadius)
-		{
-			FVector difference = this->Transform.GetLocation() - members[i].Transform.GetLocation();
-			difference.Normalize();
-			difference /= distance;
-			v += difference;
-			count++;
-		}
+		FVector difference = this->Transform.GetLocation() - members[i].Transform.GetLocation();
+		difference.Normalize();
+		difference /= distance;
+		v += difference;
 	}
 
-	if (count > 0)
+	if (members.Num() > 0)
 	{
-		v /= count;
+		v /= members.Num();
 		return v;
 	}
 
@@ -71,24 +58,17 @@ FVector FOrbFlockMember::ComputeSeparation(TArray<FOrbFlockMember>& members, flo
 FVector FOrbFlockMember::ComputeCohesion(TArray<FOrbFlockMember>& members, float maxSpeed, float neighborRadius, float maxForce)
 {
 	FVector v = FVector::ZeroVector;
-	int count = 0;
+
 	for (int i = 0; i < members.Num(); i++)
 	{
 		FOrbFlockMember& orb = members[i];
-
-		float distance = FVector::Dist(this->Transform.GetLocation(), orb.Transform.GetLocation());
-		if (distance > 0 && distance < neighborRadius)
-		{
-			v += members[i].Transform.GetLocation();
-			count++;
-		}
+		v += members[i].Transform.GetLocation();
 	}
 
-	if (count > 0)
+	if (members.Num() > 0)
 	{
-		
 		v = ComputeSteerTo(v, maxSpeed, maxForce);
-		v /= count;
+		v /= members.Num();
 		return v;
 	}
 
@@ -120,7 +100,7 @@ FVector FOrbFlockMember::ComputeSteerTo(FVector target, float maxSpeed, float ma
 	return v;
 }
 
-FVector FOrbFlockMember::ComputeAvoidance(AActor* actor, UWorld* world,  FVector Target, float maxSpeed, float maxForce)
+FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* world,  FVector Target, float maxSpeed, float maxForce)
 {
 	FVector v = FVector::ZeroVector;
 	if (world == nullptr) 
@@ -284,6 +264,24 @@ FVector AOrbFlock::GetRandomTarget()
 	return FMath::VRand() * (FMath::FRand() * this->SphereComponent->GetScaledSphereRadius());
 }
 
+TArray<FOrbFlockMember> AOrbFlock::FindNeighbors(FOrbFlockMember& member)
+{
+	TArray<FOrbFlockMember> members;
+
+	for (int i = 0; i < this->Orbs.Num(); i++)
+	{
+		FOrbFlockMember& orb = this->Orbs[i];
+
+		float distance = FVector::Dist(member.Transform.GetLocation(), orb.Transform.GetLocation());
+		if (distance > 0 && distance < Simulation.NeighborRadius)
+		{
+			members.Add(orb);
+		}
+	}
+
+	return members;
+}
+
 void AOrbFlock::AddFlockMember(const FTransform& transform, bool bIsLeader)
 {
 	int instanceId = StaticMeshInstanceComponent->AddInstanceWorldSpace(transform);
@@ -332,9 +330,10 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 		}
 	}
 
-	FVector cohesion = member.ComputeCohesion(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.CohesionWeight;
-	FVector alignment = member.ComputeAlignment(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.AlignmentWeight;
-	FVector separation = member.ComputeSeparation(this->Orbs, this->Simulation.FlockMaxSpeed, Simulation.SeparationRadius, Simulation.MaxForce) * this->Simulation.SeparationWeight;
+	TArray<FOrbFlockMember> neighbors = this->FindNeighbors(member);
+	FVector cohesion = member.ComputeCohesion(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.CohesionWeight;
+	FVector alignment = member.ComputeAlignment(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.AlignmentWeight;
+	FVector separation = member.ComputeSeparation(neighbors, this->Simulation.FlockMaxSpeed, Simulation.SeparationRadius, Simulation.MaxForce) * this->Simulation.SeparationWeight;
 	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, (this->bCollidedWithObject) ? 1000.0f : Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
 	FVector acceleration = FVector::ZeroVector;
 
