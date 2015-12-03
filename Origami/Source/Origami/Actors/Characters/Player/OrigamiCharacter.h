@@ -8,6 +8,15 @@ class AOrigamiCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+/////////////////////////////////////////////////////////////////////////////////////
+//                           This has to be removed                                //
+public:
+	UPROPERTY(EditAnywhere, Category = Teleporter)
+		float Teleporter = 0;
+//                           This has to be removed                                //
+/////////////////////////////////////////////////////////////////////////////////////
+
+
 	/* The character dies, when he falls of the edge */
 	bool bIsDead = false;
 

@@ -2,6 +2,7 @@
 
 #include "Origami.h"
 #include "ReapingHook.h"
+#include "ReapingHookAIController.h"
 
 
 // Sets default values
@@ -21,6 +22,12 @@ AReapingHook::AReapingHook()
 	{
 		Mesh->SetSkeletalMesh(MeshFinder.Object);
 	}
+
+	// The reaping hook gets controlled by the reaping hook controller
+	AIControllerClass = AReapingHookAIController::StaticClass();
+
+	// Either when placed in the world or when spawned
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called every frame

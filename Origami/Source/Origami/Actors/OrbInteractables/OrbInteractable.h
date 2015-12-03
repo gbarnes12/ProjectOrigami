@@ -4,11 +4,11 @@
 
 #include "Components/OrbTriggerComponents/OrbTriggerComponent.h"
 #include "Actors/Orbs/OrbGroup.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
 #include "OrbInteractable.generated.h"
 
 UCLASS()
-class ORIGAMI_API AOrbInteractable : public AActor
+class ORIGAMI_API AOrbInteractable : public APawn
 {
 	GENERATED_BODY()
 
