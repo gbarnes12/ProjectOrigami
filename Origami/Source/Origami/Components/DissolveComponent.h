@@ -19,10 +19,10 @@ class ORIGAMI_API UDissolveComponent : public UActorComponent
 	UMaterialInstanceDynamic* MaterialInstance;
 
 	UPROPERTY(EditAnywhere)
-	bool bDissolve = false;
-	float DissolveValue = 0.0f;
+		bool bDissolve = true;
+		float DissolveValue = 1.0f;
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UDissolveComponent();
 
@@ -31,6 +31,8 @@ public:
 	
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
+
+	bool GetDissolve();
 
 	void SetDissolve(bool State);
 };

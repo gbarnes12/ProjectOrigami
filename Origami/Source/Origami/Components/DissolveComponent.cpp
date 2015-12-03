@@ -56,6 +56,12 @@ void UDissolveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 }
 
 
+bool UDissolveComponent::GetDissolve()
+{
+	return bDissolve;
+}
+
+
 void UDissolveComponent::SetDissolve(bool State)
 {
 	bDissolve = State;
