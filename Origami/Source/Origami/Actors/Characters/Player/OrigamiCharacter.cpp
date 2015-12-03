@@ -341,6 +341,8 @@ void AOrigamiCharacter::Fire()
 		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f) + FVector(0.0f, 0.0f, 300.0f);
 
 		group->StartMoveToTarget(NULL, end);
+
+		this->bIsSendingOrbs = true;
 	}
 }
 
