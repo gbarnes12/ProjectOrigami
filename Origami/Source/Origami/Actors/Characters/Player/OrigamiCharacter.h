@@ -167,5 +167,15 @@ private:
 
 	/* Creates a visual feedback, which is triggered, when the character dies */
 	void DeathEffects();
+
+
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	//                           This has to be removed                                //
+	public:
+		UPROPERTY(EditAnywhere, Category = Teleporter)
+			float Teleporter = 0;
+	//                           This has to be removed                                //
+	/////////////////////////////////////////////////////////////////////////////////////
 };
 
