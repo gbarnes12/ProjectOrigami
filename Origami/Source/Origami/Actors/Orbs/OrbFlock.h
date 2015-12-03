@@ -32,7 +32,7 @@ public:
 	FVector ComputeSeparation( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
 	FVector ComputeCohesion( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
 	FVector ComputeSteerTo(FVector Target, float maxSpeed, float maxForce);
-	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce);
+	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce, bool bUseOldCollision);
 };
 
 USTRUCT()

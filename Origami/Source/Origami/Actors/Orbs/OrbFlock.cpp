@@ -100,7 +100,7 @@ FVector FOrbFlockMember::ComputeSteerTo(FVector target, float maxSpeed, float ma
 	return v;
 }
 
-FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* world,  FVector Target, float maxSpeed, float maxForce)
+FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* world,  FVector Target, float maxSpeed, float maxForce, bool bUseOldCollision)
 {
 	FVector v = FVector::ZeroVector;
 	if (world == nullptr) 
@@ -138,15 +138,17 @@ FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* wor
 			v = this->Transform.GetLocation() - rvHit.ImpactPoint;
 			v.Normalize();
 
-#ifdef USE_OLD_COLLISION
-			v = ComputeSteerTo(rvHit.ImpactPoint + v * 300.0f, maxSpeed, maxForce);
-#else
-			
-			v = rvHit.ImpactPoint + v * 700.0f;
-			
-			DrawDebugDirectionalArrow(world, rvHit.ImpactPoint, v, 100.0f, FColor::Green, false, -1.0f, '\000', 5.0f);
+			if (bUseOldCollision)
+			{
+				v = ComputeSteerTo(rvHit.ImpactPoint + v * 300.0f, maxSpeed, maxForce);
+			}
+			else
+			{
+				v = rvHit.ImpactPoint + v * 700.0f;
+
+				DrawDebugDirectionalArrow(world, rvHit.ImpactPoint, v, 100.0f, FColor::Green, false, -1.0f, '\000', 5.0f);
+			}
 			return v;
-#endif
 		}
 	}
 
@@ -314,7 +316,7 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 	{
 		if (!bCollidedWithObject)
 		{
-			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce);
+			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce, false);
 			if (!avoidance.IsZero())
 			{
 				FOrbFlockMember& leader = this->Orbs[0];
@@ -341,7 +343,7 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 	{
 		if (Simulation.bUseOldCollision)
 		{
-			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f);
+			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f, true);
 			acceleration = separation + alignment + cohesion + steerTo + avoidance;
 		}
 		else 
