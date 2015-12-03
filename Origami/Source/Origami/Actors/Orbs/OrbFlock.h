@@ -5,6 +5,8 @@
 #include "Runtime/Engine/Classes/Components/InstancedStaticMeshComponent.h"
 #include "OrbFlock.generated.h"
 
+//#define USE_OLD_COLLISION
+
 struct FOrbFlockMember
 {
 public:
@@ -26,10 +28,11 @@ public:
 		Trail = nullptr;
 	};
 
-	FVector ComputeAlignment(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
-	FVector ComputeSeparation(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
-	FVector ComputeCohesion(TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeAlignment( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeSeparation( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeCohesion( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
 	FVector ComputeSteerTo(FVector Target, float maxSpeed, float maxForce);
+	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce, bool bUseOldCollision);
 };
 
 USTRUCT()
@@ -76,8 +79,14 @@ struct FFlockSimulationSettings
 {
 	GENERATED_USTRUCT_BODY()
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
-	//	bool bUseCollisionAvoidance = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bMoveActor = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bUseCollision = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
+		bool bUseOldCollision = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float NeighborRadius = 500.0f;
@@ -99,9 +108,6 @@ struct FFlockSimulationSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float SteerToTargetWeight = 1.0f;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-	//	float FollowWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float MaxForce = 0.005f;
@@ -149,19 +155,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	FVector CalculateNewTarget();
 
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	bool IsLeaderAtLocation(FVector location, float thresholdDistance);
+
 private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
+	class UPointLightComponent* Light;
 	TArray<FOrbFlockMember> Orbs;
+	FVector TempRealTarget; 
+	bool bCollidedWithObject;
 	
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
 
-	
+	TArray<FOrbFlockMember> FindNeighbors(FOrbFlockMember& member);
 	void AddFlockMember(const FTransform& transform, bool bIsLeader = false);
 	void SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member);
 	void DrawDebugInformation(FOrbFlockMember& member, FVector cohesion, FVector separation, FVector alignment);
+
 	FVector GetRandomTarget();
 	FRotator FindLookAtRotation(FVector start, FVector end);
 
