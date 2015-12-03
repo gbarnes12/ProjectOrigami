@@ -158,6 +158,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	bool IsLeaderAtLocation(FVector location, float thresholdDistance);
 
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	void AttachToEntity(AActor* entity);
+
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	void DetachFromEntity();
+
 private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;

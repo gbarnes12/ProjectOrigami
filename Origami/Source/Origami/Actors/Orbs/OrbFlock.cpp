@@ -4,6 +4,7 @@
 #include "Actors/Orbs/AI/OrbAiController.h"
 #include "Runtime/AIModule/Classes/Blueprint/AIBlueprintHelperLibrary.h"
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
+#include "OrbGroup.h"
 #include "DrawDebugHelpers.h"
 #include "OrbFlock.h"
 
@@ -435,6 +436,27 @@ bool AOrbFlock::IsLeaderAtLocation(FVector location, float thresholdDistance)
 	}
 
 	return false;
+}
+
+void AOrbFlock::AttachToEntity(AActor* entity)
+{
+	if (!IsValid(entity))
+		return;
+
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		this->AiController->BlackboardComponent->SetValueAsObject(FName("AttachedActor"), entity);
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::Attached);
+	}
+}
+
+void AOrbFlock::DetachFromEntity()
+{
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		this->AiController->BlackboardComponent->ClearValue(FName("AttachedActor"));
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::FreeRoam);
+	}
 }
 
 FVector AOrbFlock::CalculateNewTarget()
