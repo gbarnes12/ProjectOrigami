@@ -26,4 +26,18 @@ AAirFlower::AAirFlower()
 		Mesh->SetSkeletalMesh(MeshFinder.Object);
 		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	}
+
+	// Create the wind effect
+	WindEffect = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystemComponent"));
+	WindEffect->AttachTo(Mesh);
+
+	// Find the and position wind particle system
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> PsFinder(TEXT("ParticleSystem'/Game/Origami/Particles/Ps_AirFlow.Ps_AirFlow'"));
+
+	if (PsFinder.Succeeded())
+	{
+		WindEffect->SetTemplate(PsFinder.Object);
+		WindEffect->SetRelativeLocation(FVector(0, 0, 180.0f));
+		WindEffect->SetVisibility(false);
+	}
 }
