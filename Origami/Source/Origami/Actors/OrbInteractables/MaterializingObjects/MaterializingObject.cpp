@@ -33,12 +33,12 @@ void AMaterializingObject::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!DissolveComponent->GetDissolve())
+	if (DissolveComponent->IsFullyAssembled())
 	{
 		// Maybe the time has come to start fading out again?
 		if (DeltaTime >= FadeOutTimer)
 		{
-			DissolveComponent->SetDissolve(true);
+			DissolveComponent->Dissolve();
 			FadeOutTimer = TimeToFadeOut;
 		}
 
@@ -56,5 +56,5 @@ void AMaterializingObject::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 	Super::TriggerOrbInteraction(IncomingOrbs);
 
 	// On interaction the dissolving has to be deactivated to fade the object in
-	DissolveComponent->SetDissolve(false);
+	DissolveComponent->Assemble();
 }

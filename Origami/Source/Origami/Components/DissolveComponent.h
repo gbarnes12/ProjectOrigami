@@ -18,9 +18,16 @@ class ORIGAMI_API UDissolveComponent : public UActorComponent
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialInstance;
 
+	// Private values
+	float DissolveValue = 1.0f;
+	
+	// Change to dissolve/restore (visible in editor for testing purposes)
 	UPROPERTY(EditAnywhere)
-		bool bDissolve = true;
-		float DissolveValue = 1.0f;
+		bool bShouldDissolve = true;
+	
+	// How long the dissolving/restoring should take (in seconds)
+	UPROPERTY(EditAnywhere)
+		float DissolveTime = 2.0f;
 
 public:
 	// Sets default values for this component's properties
@@ -30,9 +37,16 @@ public:
 	virtual void BeginPlay() override;
 	
 	// Called every frame
-	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	bool GetDissolve();
+	// Inline functions
+	void Dissolve();
+	void Assemble();
 
-	void SetDissolve(bool State);
+	bool IsFullyDissolved();
+	bool IsFullyAssembled();
+
+	// Getters/Setters
+	float GetDissolveTime() { return DissolveTime; }
+	void SetDissolveTime(float Seconds) { DissolveTime = Seconds; }
 };
