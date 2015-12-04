@@ -102,6 +102,25 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 		else
 			SetIsTargetMovingForOrbs(true);
 	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	//                           This has to be removed                                //
+	switch ((int)Teleporter)
+	{
+	case 1:
+		SetActorLocationAndRotation(FVector(1900, 400, 272), FQuat(0, 0, 180, 1));
+		break;
+	case 2:
+		SetActorLocationAndRotation(FVector(-12000, -2500, -110), FQuat(0, 0, 180, 1));
+		break;
+	case 3:
+		SetActorLocationAndRotation(FVector(-60000, -27750, 180), FQuat(0, 0, -130, 1));
+		break;
+	}
+
+	Teleporter = 0;
+	//                           This has to be removed                                //
+	/////////////////////////////////////////////////////////////////////////////////////
 }
 
 
@@ -341,6 +360,8 @@ void AOrigamiCharacter::Fire()
 		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f) + FVector(0.0f, 0.0f, 300.0f);
 
 		group->StartMoveToTarget(NULL, end);
+
+		this->bIsSendingOrbs = true;
 	}
 }
 

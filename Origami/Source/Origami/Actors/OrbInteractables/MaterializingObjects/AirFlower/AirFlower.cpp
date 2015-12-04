@@ -24,5 +24,6 @@ AAirFlower::AAirFlower()
 	if (MeshFinder.Succeeded())
 	{
 		Mesh->SetSkeletalMesh(MeshFinder.Object);
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	}
 }

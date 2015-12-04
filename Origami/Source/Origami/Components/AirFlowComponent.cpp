@@ -19,6 +19,10 @@ void UAirFlowComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	static ACharacter* character = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (!IsValid(character))
+		return;
+
 	// Get the players movement component
 	UPawnMovementComponent* pawnMovement = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetMovementComponent();
 
@@ -34,6 +38,9 @@ void UAirFlowComponent::BeginPlay()
 void UAirFlowComponent::TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction )
 {
 	Super::TickComponent( DeltaTime, TickType, ThisTickFunction );
+
+	if (!IsValid(CharacterMovement))
+		return;
 
 	// Get the vector from the flower to our character
 	FVector difference = CharacterMovement->GetActorLocation() - GetOwner()->GetActorLocation();
