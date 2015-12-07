@@ -29,10 +29,10 @@ public:
 	};
 
 	FVector ComputeAlignment( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
-	FVector ComputeSeparation( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
+	FVector ComputeSeparation( TArray<FOrbFlockMember>& member, float maxSpeed,  float maxForce);
 	FVector ComputeCohesion( TArray<FOrbFlockMember>& member, float maxSpeed, float neighborRadius, float maxForce);
 	FVector ComputeSteerTo(FVector Target, float maxSpeed, float maxForce);
-	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce, bool bUseOldCollision);
+	FVector ComputeAvoidance(const AActor* actor, const UWorld* world, FVector Target, float maxSpeed, float maxForce, bool bShowDebug);
 };
 
 USTRUCT()
@@ -44,19 +44,22 @@ struct FFlockDebugVisualizationSettings
 		bool bShowDebug = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		bool bShowAlignment = true;
+		bool bShowAlignment = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		bool bShowSeparation = true;
+		bool bShowSeparation = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		bool bShowCohesion = true;
+		bool bShowCohesion = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		bool bShowTarget = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		bool bShowVelocity = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+		bool bShowCollision = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		float ArrowScale = 2.0f;
@@ -85,32 +88,29 @@ struct FFlockSimulationSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
 		bool bUseCollision = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation")
-		bool bUseOldCollision = false;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float NeighborRadius = 500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float SeparationRadius = 200.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float FlockMaxSpeed = 100.0f;
+		float FlockMaxSpeed = 200.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float CohesionWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float SeparationWeight = 1.0f;
+		float SeparationWeight = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float AlignmentWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
+		float AvoidanceWeight = 40.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float SteerToTargetWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float MaxForce = 0.005f;
+		float MaxForce = 1.7f;
 };
 
 
