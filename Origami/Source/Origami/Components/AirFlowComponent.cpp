@@ -25,6 +25,8 @@ void UAirFlowComponent::BeginPlay()
 
 	// Get the players movement component
 	UPawnMovementComponent* pawnMovement = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetMovementComponent();
+	if (!IsValid(pawnMovement))
+		return;
 
 	// To use the full functionality, it has to be converted to a character movement component
 	if (pawnMovement != nullptr && pawnMovement->IsA<UCharacterMovementComponent>())

@@ -5,6 +5,7 @@
 #include "Runtime/AIModule/Classes/Blueprint/AIBlueprintHelperLibrary.h"
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
 #include "OrbGroup.h"
+#include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 #include "OrbFlock.h"
 
@@ -162,6 +163,7 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 	this->Tags.Add(TEXT("OrbFlock"));
 
 	PrimaryActorTick.bCanEverTick = true;
+	LoadAssets();
 
 	// Root Scene Component
 	this->RootSceneComponent = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -171,19 +173,10 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		this->RootComponent = this->RootSceneComponent;
 	}
 
-	this->SphereComponent = CreateAbstractDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	if (this->SphereComponent)
-	{
-		this->SphereComponent->AttachTo(RootComponent);
-		this->SphereComponent->SetRelativeLocation(FVector::ZeroVector);
-		this->SphereComponent->SetRelativeRotation(FRotator::ZeroRotator);
-		this->SphereComponent->RegisterComponent();
-	}
 
 	this->StaticMeshInstanceComponent = ObjectInitializer.CreateDefaultSubobject<UInstancedStaticMeshComponent>(this, TEXT("FlockMeshes"));
-	if (StaticMeshInstanceComponent)
+	if (IsValid(StaticMeshInstanceComponent))
 	{
-		this->SphereComponent->RegisterComponent();
 		this->StaticMeshInstanceComponent->AttachParent = RootComponent;
 		StaticMeshInstanceComponent->bCastDynamicShadow = true;
 		StaticMeshInstanceComponent->CastShadow = true;
@@ -203,7 +196,48 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		}
 
 	}
-	
+
+}
+
+void AOrbFlock::LoadAssets()
+{
+	if (!IsValid(Mesh))
+	{
+		static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("/Game/Origami/Objects/Orb/Visual/Obj_Stc_Orb.Obj_Stc_Orb"));
+		if (MeshFinder.Succeeded())
+		{
+			this->Mesh = MeshFinder.Object;
+		}
+	}
+
+	if (!IsValid(BlackboardAsset))
+	{
+		static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackBoardFinder(TEXT("/Game/Origami/Objects/Orb/AI/Bb_OrbFlock.Bb_OrbFlock"));
+		if (BlackBoardFinder.Succeeded())
+		{
+			this->BlackboardAsset = BlackBoardFinder.Object;
+		}
+	}
+
+	if (!IsValid(OrbBehavior))
+	{
+		static ConstructorHelpers::FObjectFinder<UBehaviorTree> BTFinder(TEXT("/Game/Origami/Objects/Orb/AI/Bt_OrbFlock.Bt_OrbFlock"));
+		if (BTFinder.Succeeded())
+		{
+			this->OrbBehavior = BTFinder.Object;
+		}
+	}
+
+	if (!IsValid(ParticleSystem))
+	{
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> ParticleFinder(TEXT("/Game/Origami/Objects/Orb/Visual/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail"));
+		if (ParticleFinder.Succeeded())
+		{
+			this->ParticleSystem = ParticleFinder.Object;
+		}
+	}
+
+	this->AIControllerClass = AOrbAiController::StaticClass();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -211,12 +245,16 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 
 void AOrbFlock::BeginPlay()
 {
+	if (!IsValid(Mesh) || !IsValid(StaticMeshInstanceComponent))
+		return;
+
+
 	this->StaticMeshInstanceComponent->SetStaticMesh(Mesh);
 
 	for (int i = 0; i < this->Visual.OrbCount; i++)
 	{
 		FVector pos = FMath::VRand();
-		float randSeed = FMath::FRandRange(0.01, 100);
+		float randSeed = FMath::FRandRange(0.01, 200);
 
 		pos *= randSeed;
 		pos += this->GetActorLocation();
@@ -224,10 +262,28 @@ void AOrbFlock::BeginPlay()
 		AddFlockMember(FTransform(FQuat::Identity, pos, FVector(this->Visual.OrbScales, this->Visual.OrbScales, this->Visual.OrbScales)), (i == 0) ? true : false);
 	}
 
-	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	InitializeAiController();
+
+}
+
+void AOrbFlock::InitializeAiController() 
+{
+	if (IsValid(AiController))
 	{
-		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), this->Orbs[0].Target);
+		if (this->AiController->BlackboardComponent != nullptr)
+			this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), this->Orbs[0].Target);
+
+		return;
 	}
+
+	AiController = GetWorld()->SpawnActor<AOrbAiController>(AOrbAiController::StaticClass());
+	if (IsValid(AiController))
+	{
+		AiController->Possess(this);
+		AiController->SetPawn(this);
+	}
+	else
+		UE_LOG(LogTemp, Log, TEXT("No Valid ai controller"))
 }
 
 void AOrbFlock::Tick(float deltaSeconds)
@@ -260,7 +316,7 @@ FRotator AOrbFlock::FindLookAtRotation(FVector start, FVector end)
 
 FVector AOrbFlock::GetRandomTarget()
 {
-	return FMath::VRand() * (FMath::FRand() * this->SphereComponent->GetScaledSphereRadius());
+	return FMath::VRand() * (FMath::FRand() * Simulation.MovementRadius);
 }
 
 TArray<FOrbFlockMember> AOrbFlock::FindNeighbors(FOrbFlockMember& member)
@@ -325,7 +381,7 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 	avoidance *= this->Simulation.AvoidanceWeight;
 	
 
-	if (avoidance.Equals(FVector::ZeroVector))
+	if (avoidance.Equals(FVector::ZeroVector) || !Simulation.bUseCollision)
 		acceleration = separation + alignment + cohesion + steerTo;
 	else
 		acceleration = avoidance + steerTo;
@@ -341,7 +397,7 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 	member.Transform.SetLocation(member.Transform.GetLocation() + member.Velocity * deltaSeconds);
 
 	// Move animation trail according to movement of orb!
-	if(member.Trail) 
+	if(IsValid(member.Trail))
 	{
 		FVector forward = member.Transform.GetUnitAxis(EAxis::X);
 		forward.Normalize();
@@ -421,6 +477,8 @@ void AOrbFlock::AttachToEntity(AActor* entity)
 	if (!IsValid(entity))
 		return;
 
+	this->AttachRootComponentToActor(entity, NAME_None, EAttachLocation::Type::KeepWorldPosition, false);
+
 	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
 	{
 		this->AiController->BlackboardComponent->SetValueAsObject(FName("AttachedActor"), entity);
@@ -430,6 +488,8 @@ void AOrbFlock::AttachToEntity(AActor* entity)
 
 void AOrbFlock::DetachFromEntity()
 {
+	this->DetachRootComponentFromParent(true);
+
 	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
 	{
 		this->AiController->BlackboardComponent->ClearValue(FName("AttachedActor"));
@@ -444,6 +504,15 @@ FVector AOrbFlock::CalculateNewTarget()
 	FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
 	leader.Target = this->GetRandomTarget() + this->GetActorLocation();
 	return leader.Target;
+}
+
+void AOrbFlock::ResetTargetTo(FVector location)
+{
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		this->Orbs[0].Target = location;
+		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), location);
+	}
 }
 
 

@@ -74,7 +74,7 @@ struct FFlockVisualSettings
 		int32 OrbCount = 20;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual", meta = (ClampMin = "0.0"))
-		float OrbScales = 0.1f;
+		float OrbScales = 0.3f;
 };
 
 USTRUCT() 
@@ -89,7 +89,7 @@ struct FFlockSimulationSettings
 		bool bUseCollision = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float NeighborRadius = 500.0f;
+		float NeighborRadius = 10000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float FlockMaxSpeed = 200.0f;
@@ -98,19 +98,22 @@ struct FFlockSimulationSettings
 		float CohesionWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float SeparationWeight = 100.0f;
+		float SeparationWeight = 400.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float AlignmentWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float AvoidanceWeight = 40.0f;
+		float AvoidanceWeight = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
 		float SteerToTargetWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
-		float MaxForce = 1.7f;
+		float MaxForce = 13.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulation", meta = (ClampMin = "0.0"))
+		float MovementRadius = 300.0f;
 };
 
 
@@ -164,6 +167,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	void DetachFromEntity();
 
+	void InitializeAiController();
+
+	void ResetTargetTo(FVector location);
+
 private:
 	/* The scene root component from which everything originates */
 	class USceneComponent* RootSceneComponent;
@@ -180,6 +187,7 @@ private:
 	void AddFlockMember(const FTransform& transform, bool bIsLeader = false);
 	void SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member);
 	void DrawDebugInformation(FOrbFlockMember& member, FVector cohesion, FVector separation, FVector alignment);
+	void LoadAssets();
 
 	FVector GetRandomTarget();
 	FRotator FindLookAtRotation(FVector start, FVector end);

@@ -25,7 +25,7 @@ protected:
 	class USplineComponent* OrbPath;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cocoon, meta = (AllowPrivateAccess = "true"))
-	class AOrbGroup* Orbs;
+	class AOrbFlock* Orbs;
 
 	class AActor* ActionButtonPrompt;
 	
