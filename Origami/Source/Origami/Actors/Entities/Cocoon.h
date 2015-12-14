@@ -22,16 +22,15 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cocoon, meta = (AllowPrivateAccess = "true"))
-	class USplineComponent* OrbPath;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cocoon, meta = (AllowPrivateAccess = "true"))
 	class AOrbFlock* Orbs;
 
 	class AActor* ActionButtonPrompt;
-	
 public:
+
 	virtual void Interact(AOrigamiCharacter* player) override;
 	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint) override;
 	virtual void LeaveInteractionRange(AOrigamiCharacter* player) override;
-	FORCEINLINE class USplineComponent* GetOrbPath() const { return this->OrbPath; }
+
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	bool GetIsFree() const { return (this->Orbs == NULL); }
 };

@@ -10,8 +10,9 @@ enum class EOrbMode : uint8
 {
 	
 	FreeRoam UMETA(DisplayName = "Roam"),
-	Attached UMETA(DisplayName = "Attached")
-};
+	Attached UMETA(DisplayName = "Attached"),
+	FindAimX UMETA(DisplayName = "FindAim")
+}; 
 
 enum EActorType {
 	None = 0,

@@ -289,7 +289,7 @@ void AOrbGroup::AttachSocket(AActor* socket)
 		if (!player)
 			return;
 		
-		player->AddOrbGroup(this);
+		//player->AddOrbGroup(this);
 
 		this->AttachedType = EActorType::Player;
 		this->Socket = socket;
@@ -319,7 +319,7 @@ void AOrbGroup::AttachSocket(AActor* socket)
 		if (entity->GetClass()->IsChildOf(ACocoon::StaticClass()))
 		{
 			const ACocoon* cocoon = Cast<ACocoon>(this->Socket);
-			this->OrbPath = cocoon->GetOrbPath();
+		//	this->OrbPath = cocoon->GetOrbPath();
 		}
 	} 
 	else if (socket->ActorHasTag(TEXT("OrbPath")))

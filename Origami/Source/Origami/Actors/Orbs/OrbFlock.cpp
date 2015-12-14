@@ -494,6 +494,8 @@ void AOrbFlock::DetachFromEntity()
 	{
 		this->AiController->BlackboardComponent->ClearValue(FName("AttachedActor"));
 		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::FreeRoam);
+		this->AiController->BlackboardComponent->SetValueAsBool(FName("HasReachedPlayer"), false);
+		this->AiController->BlackboardComponent->SetValueAsBool(FName("ReactivatedMovement"), false);
 	}
 }
 
@@ -510,9 +512,17 @@ void AOrbFlock::ResetTargetTo(FVector location)
 {
 	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
 	{
+		if (this->Orbs.Num() == 0)
+			return;
+
 		this->Orbs[0].Target = location;
 		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), location);
 	}
+}
+
+void AOrbFlock::ChangeColor(FColor color)
+{
+	UE_LOG(LogTemp, Log, TEXT("Not yet implemented!"));
 }
 
 

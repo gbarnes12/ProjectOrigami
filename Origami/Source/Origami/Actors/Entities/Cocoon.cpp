@@ -102,6 +102,5 @@ void ACocoon::Interact(AOrigamiCharacter* player)
 	
 	//Play calling orb animation
 	player->bIsCallingOrbs = true;
-
 	this->Orbs = NULL;
 }

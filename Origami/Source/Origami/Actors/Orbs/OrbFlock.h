@@ -169,7 +169,11 @@ public:
 
 	void InitializeAiController();
 
+	UFUNCTION(BlueprintCallable, Category = "Flock")
 	void ResetTargetTo(FVector location);
+
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	void ChangeColor(FColor color);
 
 private:
 	/* The scene root component from which everything originates */
