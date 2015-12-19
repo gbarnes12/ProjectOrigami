@@ -14,7 +14,9 @@ UDissolveComponent::UDissolveComponent()
 
 	// Find the base material
 	static ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(TEXT("Material'/Game/Origami/Materials/Mat_Dissolve.Mat_Dissolve'"));
-	BaseMaterial = (UMaterial*)MaterialFinder.Object;
+	
+	if(MaterialFinder.Succeeded())
+		BaseMaterial = (UMaterial*)MaterialFinder.Object;
 }
 
 
@@ -22,6 +24,9 @@ UDissolveComponent::UDissolveComponent()
 void UDissolveComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(!BaseMaterial)
+		return;
 
 	// Create the material instance
 	MaterialInstance = UMaterialInstanceDynamic::Create(BaseMaterial, this);
@@ -32,12 +37,9 @@ void UDissolveComponent::BeginPlay()
 	TArray<UMeshComponent*> Components;
 	Actor->GetComponents<UMeshComponent>(Components);
 
+	// Assign the material instance to all of them
 	for (int32 i = 0; i<Components.Num(); i++)
-	{
-		// Assign the material instance
-		UMeshComponent* MeshComponent = Components[i];
-		MeshComponent->SetMaterial(0, MaterialInstance);
-	}
+		Components[i]->SetMaterial(0, MaterialInstance);
 }
 
 
@@ -46,23 +48,36 @@ void UDissolveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if(bDissolve && DissolveValue < 1.0f)
-		DissolveValue += 0.5f * DeltaTime;
-	if (!bDissolve && DissolveValue > 0.0f)
-		DissolveValue -= 0.5f * DeltaTime;
+	if(MaterialInstance)
+	{
+		// Dissolving
+		if (bShouldDissolve && DissolveValue < 1.0f)
+			DissolveValue += 1 / DissolveTime * DeltaTime;
 
-	if(MaterialInstance != NULL)
+		// Assembling
+		if (!bShouldDissolve && DissolveValue > 0.0f)
+			DissolveValue -= 1 / DissolveTime * DeltaTime;
+
 		MaterialInstance->SetScalarParameterValue(FName(TEXT("Dissolve Anmount")), DissolveValue);
+	}
 }
 
-
-bool UDissolveComponent::GetDissolve()
+void UDissolveComponent::Assemble()
 {
-	return bDissolve;
+	bShouldDissolve = false;
 }
 
-
-void UDissolveComponent::SetDissolve(bool State)
+void UDissolveComponent::Dissolve()
 {
-	bDissolve = State;
+	bShouldDissolve = true;
+}
+
+bool UDissolveComponent::IsFullyAssembled()
+{
+	return DissolveValue <= 0.0f;
+}
+
+bool UDissolveComponent::IsFullyDissolved()
+{
+	return DissolveValue >= 1.0f;
 }

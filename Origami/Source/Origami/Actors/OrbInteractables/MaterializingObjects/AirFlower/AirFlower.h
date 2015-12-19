@@ -22,4 +22,8 @@ public:
 	// The component which is capable for the force addition
 	UPROPERTY(EditAnywhere)
 		UAirFlowComponent* AirFlow;
+
+	// The particle system visualising the airflow
+	UPROPERTY(EditAnywhere)
+		UParticleSystemComponent* WindEffect;
 };

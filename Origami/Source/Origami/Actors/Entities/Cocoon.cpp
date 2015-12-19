@@ -4,6 +4,7 @@
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Actors/Orbs/OrbGroup.h"
+#include "Actors/Orbs/OrbFlock.h"
 #include "Cocoon.h"
 
 
@@ -25,15 +26,6 @@ ACocoon::ACocoon()
 		//boxExtents.Z = boxExtents.Z * 1.5f;
 		this->AimBox->SetBoxExtent(boxExtents);
 	}
-
-	//  
-	this->OrbPath = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComp"));
-	if (this->OrbPath)
-	{
-		this->OrbPath->AttachTo(this->RootComponent);
-		this->OrbPath->SetClosedLoop(true);
-		//this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -43,41 +35,24 @@ void ACocoon::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!IsValid(this->OrbPath))
-		return;
-
-	float radius = (this->GetSimpleCollisionRadius()) * 1.5f;
-	this->OrbPath->ClearSplinePoints();
-
-	// TODO: REFACTOR THIS SO IT MIGHT BE USED WITHIN A BLUEPRINT 
-	// AND AT MULTIPLE CODE PLACES!
-	FVector up = this->GetActorUpVector();
-	FVector radiusVector = FVector(radius, 0.0f, 0.0f);
-	FVector worldPosition = this->GetActorLocation();
-	for (int i = 0; i <= 270; i = i + 45)
-	{
-		FVector pointOnRadius = UKismetMathLibrary::RotateAngleAxis(radiusVector, i, up);
-		FVector randPosition = FVector(0.0f, 0.0f, FMath::RandRange(-10.0f, 80.0f));
-		FVector position = worldPosition + pointOnRadius + randPosition;
-
-		this->OrbPath->AddSplineWorldPoint(position);
-	}
-
-	this->OrbPath->ResetRelativeTransform();
-	this->OrbPath->SetRelativeLocation(FVector::ZeroVector);
-
 	if (bSpawnOrbsAtStartup)
 	{
+
+		FActorSpawnParameters params;
+		params.bNoCollisionFail = true;
+
+		AOrbFlock* flock = GetWorld()->SpawnActor<AOrbFlock>(AOrbFlock::StaticClass(), this->GetActorLocation(), this->GetActorRotation(), params);
+
 		// Now we need to spawn the OrbGroup :)
-		AActor* orbGroup = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Objects/Orb/"), TEXT("Bt_Act_OrbGroup.Bt_Act_OrbGroup"), false);
-		if (!IsValid(orbGroup))
+		if (!IsValid(flock))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of Bt_Act_OrbGroup blueprint!"));
+			UE_LOG(LogTemp, Error, TEXT("Couldn't create a new instance of AOrbFlock!"));
 			return;
 		}
-
-		this->Orbs = Cast<AOrbGroup>(orbGroup);
-		this->Orbs->AttachSocket(this);
+		
+		this->Orbs = flock;
+		this->Orbs->InitializeAiController();
+		this->Orbs->AttachToEntity(this);
 	}
 
 	this->ActionButtonPrompt = AEntity::NewActorFromString(this, TEXT("/Game/Origami/Objects/UI/Hud/ActionPrompt/"), TEXT("Bt_ActionPrompt.Bt_ActionPrompt"), false);
@@ -105,6 +80,9 @@ void ACocoon::EnterInteractionRange(AOrigamiCharacter* player, FVector collision
 
 void ACocoon::LeaveInteractionRange(AOrigamiCharacter* player)
 {
+	if (!IsValid(this->ActionButtonPrompt))
+		return;
+
 	this->ActionButtonPrompt->SetActorHiddenInGame(true);
 }
 
@@ -114,12 +92,15 @@ void ACocoon::Interact(AOrigamiCharacter* player)
 	if (!IsValid(this->Orbs))
 		return;
 
-	//this->Orbs->AttachSocket(player);
-	this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true); //TODO: Should somehow catch if player already has max number of orbs before blindly send orbs on their way?
+	UE_LOG(LogTemp, Log, TEXT("Orbs: %s"), *this->Orbs->GetName());
+
+	this->Orbs->DetachFromEntity();
+	this->Orbs->AttachToEntity(player);
+	this->Orbs->ResetTargetTo(player->GetActorLocation());
+	//this->Orbs->StartMoveToTarget(player, player->OrbPath->GetWorldLocationAtSplinePoint(0), true); //TODO: Should somehow catch if player already has max number of orbs before blindly send orbs on their way?
 	player->DisableInput(Cast<APlayerController>(player->GetController()));
 	
 	//Play calling orb animation
 	player->bIsCallingOrbs = true;
-
 	this->Orbs = NULL;
 }

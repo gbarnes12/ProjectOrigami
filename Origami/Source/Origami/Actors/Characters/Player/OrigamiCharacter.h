@@ -39,7 +39,7 @@ public:
 	FColor CurrentColor;
 
 	/*The Orbs the player currently posseses*/
-	TArray<class AOrbGroup*> Orbs;
+	TArray<class AOrbFlock*> Orbs;
 
 	/*Temp values*/
 	float ForwardAmount;
@@ -79,7 +79,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter, meta = (AllowPrivateAccess = "true"))
 	class USplineComponent* OrbPath;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = OrigamiCharacter)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = OrigamiCharacter)
 	bool bIsCallingOrbs;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = OrigamiCharacter)
@@ -149,7 +149,8 @@ public:
 	virtual void Tick(float deltaSeconds) override;
 
 	/*  */
-	void AddOrbGroup(AOrbGroup* orbGroup);
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	void AddOrbFlock(AOrbFlock* orbGroup);
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

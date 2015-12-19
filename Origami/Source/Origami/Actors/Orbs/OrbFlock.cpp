@@ -4,6 +4,8 @@
 #include "Actors/Orbs/AI/OrbAiController.h"
 #include "Runtime/AIModule/Classes/Blueprint/AIBlueprintHelperLibrary.h"
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
+#include "OrbGroup.h"
+#include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 #include "OrbFlock.h"
 
@@ -30,7 +32,7 @@ FVector FOrbFlockMember::ComputeAlignment(TArray<FOrbFlockMember>& members, floa
 	return v;
 }
 
-FVector FOrbFlockMember::ComputeSeparation(TArray<FOrbFlockMember>& members, float maxSpeed, float separationRadius, float maxForce)
+FVector FOrbFlockMember::ComputeSeparation(TArray<FOrbFlockMember>& members, float maxSpeed, float maxForce)
 {
 	FVector v = FVector::ZeroVector;
 
@@ -79,28 +81,15 @@ FVector FOrbFlockMember::ComputeSteerTo(FVector target, float maxSpeed, float ma
 {
 	FVector v = FVector::ZeroVector;
 	FVector targetDirection = target - this->Transform.GetLocation();
-	float distance = targetDirection.Size();
-	if (distance > 0)
-	{
-		targetDirection.Normalize();
+	targetDirection.Normalize();
+	targetDirection *= maxSpeed;
 
-		if (distance < 200.0)
-		{
-			targetDirection *= maxSpeed * (distance / 200.0);
-		}
-		else
-		{
-			targetDirection *= maxSpeed;
-		}
-
-		v = targetDirection - this->Velocity;
-		v = v.GetClampedToMaxSize(maxForce);
-	}
-
+	v = targetDirection - this->Velocity;
+	v = v.GetClampedToMaxSize(maxForce);
 	return v;
 }
 
-FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* world,  FVector Target, float maxSpeed, float maxForce, bool bUseOldCollision)
+FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* world,  FVector Target, float maxSpeed, float maxForce, bool bShowDebug)
 {
 	FVector v = FVector::ZeroVector;
 	if (world == nullptr) 
@@ -113,7 +102,7 @@ FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* wor
 	velocity.Normalize();
 
 	FVector start = this->Transform.GetLocation();
-	FVector ahead = this->Transform.GetLocation() + velocity * 100.0;
+	FVector ahead = this->Transform.GetLocation() + velocity * 100.0f;
 
 	FCollisionQueryParams rvTraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, actor);
 	rvTraceParams.bTraceComplex = true;
@@ -122,33 +111,40 @@ FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* wor
 
 	FHitResult rvHit(ForceInit);
 
-	world->LineTraceSingleByChannel(
+	/*world->SweepSingle(
 		rvHit, //result
 		start, //start
 		ahead, //end
 		ECollisionChannel::ECC_Visibility, //collision channel
-		rvTraceParams);
+		rvTraceParams);*/
 
-	//DrawDebugDirectionalArrow(world, start, ahead, 100.0f, FColor::Red, false, -1.0f, '\000', 2.0f);
+	world->SweepSingleByChannel(rvHit, start, ahead, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(10), rvTraceParams);
+
+	
 
 	if (rvHit.bBlockingHit)
 	{
-		if (rvHit.GetActor()) {
-		
-			v = this->Transform.GetLocation() - rvHit.ImpactPoint;
-			v.Normalize();
+		FVector reflection = FMath::GetReflectionVector(this->Velocity, rvHit.ImpactNormal);
+		reflection.Normalize();
 
-			if (bUseOldCollision)
-			{
-				v = ComputeSteerTo(rvHit.ImpactPoint + v * 300.0f, maxSpeed, maxForce);
-			}
-			else
-			{
-				v = rvHit.ImpactPoint + v * 700.0f;
+		if (bShowDebug)
+		{
+			DrawDebugDirectionalArrow(world, rvHit.ImpactPoint, rvHit.ImpactPoint + reflection * 200.0f, 100.0f, FColor::Green, false, -1.0f, '\000', 2.0f);
+			DrawDebugDirectionalArrow(world, start, ahead, 100.0f, FColor::Green, false, -1.0f, '\000', 2.0f);
+			DrawDebugSphere(world, ahead, 10, 5, FColor::Green, false, -1.0f, '\000');
+		}
 
-				DrawDebugDirectionalArrow(world, rvHit.ImpactPoint, v, 100.0f, FColor::Green, false, -1.0f, '\000', 5.0f);
-			}
-			return v;
+		reflection = reflection.GetClampedToMaxSize(maxForce);
+
+		return reflection;
+
+	}
+	else
+	{
+		if (bShowDebug)
+		{
+			DrawDebugDirectionalArrow(world, start, ahead, 100.0f, FColor::Red, false, -1.0f, '\000', 2.0f);
+			DrawDebugSphere(world, ahead, 10, 5, FColor::Red, false, -1.0f, '\000');
 		}
 	}
 
@@ -167,6 +163,7 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 	this->Tags.Add(TEXT("OrbFlock"));
 
 	PrimaryActorTick.bCanEverTick = true;
+	LoadAssets();
 
 	// Root Scene Component
 	this->RootSceneComponent = CreateAbstractDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -176,21 +173,14 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		this->RootComponent = this->RootSceneComponent;
 	}
 
-	this->SphereComponent = CreateAbstractDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	if (this->SphereComponent)
-	{
-		this->SphereComponent->AttachTo(RootComponent);
-		this->SphereComponent->SetRelativeLocation(FVector::ZeroVector);
-		this->SphereComponent->SetRelativeRotation(FRotator::ZeroRotator);
-		this->SphereComponent->RegisterComponent();
-	}
 
 	this->StaticMeshInstanceComponent = ObjectInitializer.CreateDefaultSubobject<UInstancedStaticMeshComponent>(this, TEXT("FlockMeshes"));
-	if (StaticMeshInstanceComponent)
+	if (IsValid(StaticMeshInstanceComponent))
 	{
-		this->SphereComponent->RegisterComponent();
 		this->StaticMeshInstanceComponent->AttachParent = RootComponent;
-		
+		StaticMeshInstanceComponent->bCastDynamicShadow = true;
+		StaticMeshInstanceComponent->CastShadow = true;
+		StaticMeshInstanceComponent->bCastStaticShadow = true;
 
 		Light = ObjectInitializer.CreateDefaultSubobject<UPointLightComponent>(this, TEXT("PointLight"));
 		if (Light)
@@ -206,7 +196,48 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		}
 
 	}
-	
+
+}
+
+void AOrbFlock::LoadAssets()
+{
+	if (!IsValid(Mesh))
+	{
+		static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("/Game/Origami/Objects/Orb/Visual/Obj_Stc_Orb.Obj_Stc_Orb"));
+		if (MeshFinder.Succeeded())
+		{
+			this->Mesh = MeshFinder.Object;
+		}
+	}
+
+	if (!IsValid(BlackboardAsset))
+	{
+		static ConstructorHelpers::FObjectFinder<UBlackboardData> BlackBoardFinder(TEXT("/Game/Origami/Objects/Orb/AI/Bb_OrbFlock.Bb_OrbFlock"));
+		if (BlackBoardFinder.Succeeded())
+		{
+			this->BlackboardAsset = BlackBoardFinder.Object;
+		}
+	}
+
+	if (!IsValid(OrbBehavior))
+	{
+		static ConstructorHelpers::FObjectFinder<UBehaviorTree> BTFinder(TEXT("/Game/Origami/Objects/Orb/AI/Bt_OrbFlock.Bt_OrbFlock"));
+		if (BTFinder.Succeeded())
+		{
+			this->OrbBehavior = BTFinder.Object;
+		}
+	}
+
+	if (!IsValid(ParticleSystem))
+	{
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> ParticleFinder(TEXT("/Game/Origami/Objects/Orb/Visual/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail"));
+		if (ParticleFinder.Succeeded())
+		{
+			this->ParticleSystem = ParticleFinder.Object;
+		}
+	}
+
+	this->AIControllerClass = AOrbAiController::StaticClass();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -214,12 +245,16 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 
 void AOrbFlock::BeginPlay()
 {
+	if (!IsValid(Mesh) || !IsValid(StaticMeshInstanceComponent))
+		return;
+
+
 	this->StaticMeshInstanceComponent->SetStaticMesh(Mesh);
 
 	for (int i = 0; i < this->Visual.OrbCount; i++)
 	{
 		FVector pos = FMath::VRand();
-		float randSeed = FMath::FRandRange(0.01, 100);
+		float randSeed = FMath::FRandRange(0.01, 200);
 
 		pos *= randSeed;
 		pos += this->GetActorLocation();
@@ -227,10 +262,28 @@ void AOrbFlock::BeginPlay()
 		AddFlockMember(FTransform(FQuat::Identity, pos, FVector(this->Visual.OrbScales, this->Visual.OrbScales, this->Visual.OrbScales)), (i == 0) ? true : false);
 	}
 
-	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	InitializeAiController();
+
+}
+
+void AOrbFlock::InitializeAiController() 
+{
+	if (IsValid(AiController))
 	{
-		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), this->Orbs[0].Target);
+		if (this->AiController->BlackboardComponent != nullptr)
+			this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), this->Orbs[0].Target);
+
+		return;
 	}
+
+	AiController = GetWorld()->SpawnActor<AOrbAiController>(AOrbAiController::StaticClass());
+	if (IsValid(AiController))
+	{
+		AiController->Possess(this);
+		AiController->SetPawn(this);
+	}
+	else
+		UE_LOG(LogTemp, Log, TEXT("No Valid ai controller"))
 }
 
 void AOrbFlock::Tick(float deltaSeconds)
@@ -263,7 +316,7 @@ FRotator AOrbFlock::FindLookAtRotation(FVector start, FVector end)
 
 FVector AOrbFlock::GetRandomTarget()
 {
-	return FMath::VRand() * (FMath::FRand() * this->SphereComponent->GetScaledSphereRadius());
+	return FMath::VRand() * (FMath::FRand() * Simulation.MovementRadius);
 }
 
 TArray<FOrbFlockMember> AOrbFlock::FindNeighbors(FOrbFlockMember& member)
@@ -312,49 +365,31 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 {
 	// Check for collision event if so we need to calculate an avoidance target
 	// and if we need to avoid set the new target temporary till we reached it!
-	if (Simulation.bUseCollision && !Simulation.bUseOldCollision)
-	{
-		if (!bCollidedWithObject)
-		{
-			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce, false);
-			if (!avoidance.IsZero())
-			{
-				FOrbFlockMember& leader = this->Orbs[0];
-				this->TempRealTarget = leader.Target;
-				this->bCollidedWithObject = true;
-				leader.Target = avoidance;
-
-				if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
-				{
-					this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), leader.Target);
-				}
-			}
-		}
-	}
-
 	TArray<FOrbFlockMember> neighbors = this->FindNeighbors(member);
-	FVector cohesion = member.ComputeCohesion(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.CohesionWeight;
-	FVector alignment = member.ComputeAlignment(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce) * this->Simulation.AlignmentWeight;
-	FVector separation = member.ComputeSeparation(neighbors, this->Simulation.FlockMaxSpeed, Simulation.SeparationRadius, Simulation.MaxForce) * this->Simulation.SeparationWeight;
-	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, (this->bCollidedWithObject) ? 1000.0f : Simulation.MaxForce) * this->Simulation.SteerToTargetWeight;
-	FVector acceleration = FVector::ZeroVector;
 
-	if (Simulation.bUseCollision)
-	{
-		if (Simulation.bUseOldCollision)
-		{
-			FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, 1000.0f, true);
-			acceleration = separation + alignment + cohesion + steerTo + avoidance;
-		}
-		else 
-		{
-			acceleration = separation + alignment + cohesion + steerTo;
-		}
-	}
+	FVector acceleration = FVector::ZeroVector;
+	FVector cohesion = member.ComputeCohesion(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce); 
+	FVector alignment = member.ComputeAlignment(neighbors, this->Simulation.FlockMaxSpeed, Simulation.NeighborRadius, Simulation.MaxForce); 
+	FVector separation = member.ComputeSeparation(neighbors, this->Simulation.FlockMaxSpeed, Simulation.MaxForce); 
+	FVector steerTo = member.ComputeSteerTo(Orbs[0].Target, this->Simulation.FlockMaxSpeed, Simulation.MaxForce);
+	FVector avoidance = member.ComputeAvoidance(this, GetWorld(), Orbs[0].Target, Simulation.FlockMaxSpeed, Simulation.MaxForce, (Debug.bShowDebug && Debug.bShowCollision) ? true : false);
+
+	cohesion *= this->Simulation.CohesionWeight;
+	alignment *= this->Simulation.AlignmentWeight;
+	separation *= this->Simulation.SeparationWeight;
+	steerTo *= this->Simulation.SteerToTargetWeight;
+	avoidance *= this->Simulation.AvoidanceWeight;
+	
+
+	if (avoidance.Equals(FVector::ZeroVector) || !Simulation.bUseCollision)
+		acceleration = separation + alignment + cohesion + steerTo;
+	else
+		acceleration = avoidance + steerTo;
 
 	member.Velocity += acceleration;
 	member.Velocity = member.Velocity.GetClampedToMaxSize(this->Simulation.FlockMaxSpeed);
 
+	
 	// we calculate the rotation by finding the direction we look to by the calculated velocity!
 	FRotator rot = FindLookAtRotation(member.Transform.GetLocation(), member.Transform.GetLocation() + member.Velocity);
 
@@ -362,7 +397,7 @@ void AOrbFlock::SimulateOrbMember(float deltaSeconds, FOrbFlockMember& member)
 	member.Transform.SetLocation(member.Transform.GetLocation() + member.Velocity * deltaSeconds);
 
 	// Move animation trail according to movement of orb!
-	if(member.Trail) 
+	if(IsValid(member.Trail))
 	{
 		FVector forward = member.Transform.GetUnitAxis(EAxis::X);
 		forward.Normalize();
@@ -437,22 +472,57 @@ bool AOrbFlock::IsLeaderAtLocation(FVector location, float thresholdDistance)
 	return false;
 }
 
+void AOrbFlock::AttachToEntity(AActor* entity)
+{
+	if (!IsValid(entity))
+		return;
+
+	this->AttachRootComponentToActor(entity, NAME_None, EAttachLocation::Type::KeepWorldPosition, false);
+
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		this->AiController->BlackboardComponent->SetValueAsObject(FName("AttachedActor"), entity);
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::Attached);
+	}
+}
+
+void AOrbFlock::DetachFromEntity()
+{
+	this->DetachRootComponentFromParent(true);
+
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		this->AiController->BlackboardComponent->ClearValue(FName("AttachedActor"));
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::FreeRoam);
+		this->AiController->BlackboardComponent->SetValueAsBool(FName("HasReachedPlayer"), false);
+		this->AiController->BlackboardComponent->SetValueAsBool(FName("ReactivatedMovement"), false);
+	}
+}
+
 FVector AOrbFlock::CalculateNewTarget()
 {
 	FOrbFlockMember& leader = this->Orbs[0];
 
-	if (this->bCollidedWithObject) 
-	{
-		leader.Target = this->TempRealTarget;
-		this->bCollidedWithObject = false;
-	}
-	else 
-	{
-		FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
-		leader.Target = this->GetRandomTarget() + this->GetActorLocation();
-	}
-
+	FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
+	leader.Target = this->GetRandomTarget() + this->GetActorLocation();
 	return leader.Target;
+}
+
+void AOrbFlock::ResetTargetTo(FVector location)
+{
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		if (this->Orbs.Num() == 0)
+			return;
+
+		this->Orbs[0].Target = location;
+		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), location);
+	}
+}
+
+void AOrbFlock::ChangeColor(FColor color)
+{
+	UE_LOG(LogTemp, Log, TEXT("Not yet implemented!"));
 }
 
 

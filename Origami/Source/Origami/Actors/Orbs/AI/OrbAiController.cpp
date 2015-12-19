@@ -18,6 +18,7 @@ void AOrbAiController::Possess(APawn * Pawn)
 	Super::Possess(Pawn);
 
 	AOrbFlock* flock = Cast<AOrbFlock>(Pawn);
+	UE_LOG(LogTemp, Log, TEXT("Teeest"));
 
 	if (flock && flock->OrbBehavior && this->BlackboardComponent && flock->BlackboardAsset)
 	{

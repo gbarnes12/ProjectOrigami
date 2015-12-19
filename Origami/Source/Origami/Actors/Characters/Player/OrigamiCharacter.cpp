@@ -4,7 +4,7 @@
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Origami/Actors/Entity.h"
-#include "Origami/Actors/Orbs/OrbGroup.h"
+#include "Origami/Actors/Orbs/OrbFlock.h"
 #include "OrigamiCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ void AOrigamiCharacter::CheckIfIsInInteractionRange()
 		this->bIsInInteractionRange = false;
 }
 
-void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
+void AOrigamiCharacter::AddOrbFlock(AOrbFlock* orbFlock)
 {
 	//End calling orbs animation
 	this->bIsCallingOrbs = false;
@@ -238,8 +238,8 @@ void AOrigamiCharacter::AddOrbGroup(AOrbGroup* orbGroup)
 	if (this->Orbs.Num() == 3)
 		return;	
 
-	orbGroup->ChangeColor(this->CurrentColor);
-	this->Orbs.Push(orbGroup);
+	orbFlock->ChangeColor(this->CurrentColor);
+	this->Orbs.Push(orbFlock);
 }
 
 void AOrigamiCharacter::ChangeColor(FColor color)
@@ -248,7 +248,7 @@ void AOrigamiCharacter::ChangeColor(FColor color)
 
 	for (int i = 0; i < Orbs.Num(); i++)
 	{
-		AOrbGroup* orbGroup = this->Orbs[i];
+		AOrbFlock* orbGroup = this->Orbs[i];
 		if (orbGroup)
 		{
 			orbGroup->ChangeColor(color);
@@ -258,10 +258,7 @@ void AOrigamiCharacter::ChangeColor(FColor color)
 
 void AOrigamiCharacter::SetIsTargetMovingForOrbs(bool value)
 {
-	for (int i = 0; i < this->Orbs.Num(); i++)
-	{
-		this->Orbs[i]->bIsTargetMoving = value;
-	}
+	
 }
 
 bool AOrigamiCharacter::IsDead()
@@ -346,12 +343,13 @@ void AOrigamiCharacter::Fire()
 	if (this->Orbs.Num() == 0)
 		return;
 
-	AOrbGroup* group = this->Orbs.Pop(false);
+	AOrbFlock* flock = this->Orbs.Pop(false);
 
+	
 	// check whether the group we returned is still valid
-	if (IsValid(group))
+	if (IsValid(flock))
 	{
-		FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
+		/*FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
 		FRotator cameraRotation = this->GetFollowCamera()->GetComponentRotation();
 
 		this->GetActorEyesViewPoint(cameraLocation, cameraRotation);
@@ -361,7 +359,7 @@ void AOrigamiCharacter::Fire()
 
 		group->StartMoveToTarget(NULL, end);
 
-		this->bIsSendingOrbs = true;
+		this->bIsSendingOrbs = true;*/
 	}
 }
 
