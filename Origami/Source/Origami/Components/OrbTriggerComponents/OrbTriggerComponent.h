@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "Actors/Orbs/OrbGroup.h"
 #include "Components/ActorComponent.h"
 #include "OrbTriggerComponent.generated.h"
 
+
+class AOrbFlock;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ORIGAMI_API UOrbTriggerComponent : public UActorComponent
@@ -17,8 +18,9 @@ public:
 	UOrbTriggerComponent();
 
 	// Trigger function called by incoming orbs
-	virtual bool TriggerOrbInteraction(AOrbGroup* IncomingOrbs);
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	virtual bool TriggerOrbInteraction(AOrbFlock* IncomingOrbs);
 
 	// Function to check for ability to pull the trigger
-	virtual bool IsAbleToTrigger(AOrbGroup* IncomingOrbs);
+	virtual bool IsAbleToTrigger(AOrbFlock* IncomingOrbs);
 };

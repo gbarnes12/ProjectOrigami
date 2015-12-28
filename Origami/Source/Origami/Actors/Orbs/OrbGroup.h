@@ -3,16 +3,9 @@
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "Runtime/Engine/Classes/Engine/StaticMesh.h"
 #include "Runtime/Engine/Classes/Components/TimelineComponent.h"
+#include "Actors/Orbs/OrbFlock.h"
 #include "OrbGroup.generated.h"
 
-UENUM(BlueprintType)
-enum class EOrbMode : uint8 
-{
-	
-	FreeRoam UMETA(DisplayName = "Roam"),
-	Attached UMETA(DisplayName = "Attached"),
-	FindAimX UMETA(DisplayName = "FindAim")
-}; 
 
 enum EActorType {
 	None = 0,

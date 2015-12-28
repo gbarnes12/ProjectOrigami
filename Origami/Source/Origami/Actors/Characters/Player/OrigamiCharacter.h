@@ -1,6 +1,7 @@
 // Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "GameFramework/Character.h"
+#include "Origami/Actors/Entities/Cocoon.h"
 #include "OrigamiCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -27,7 +28,7 @@ public:
 	struct FTimerHandle IsWithinInteractionRangeHandle;
 
 	/* The current Aim we are looking at! */
-	class AEntity* Target;
+	class ACocoon* Target;
 
 	/*Specifies if the player is within the necessary interaction range of an entity.*/
 	bool bIsInInteractionRange;

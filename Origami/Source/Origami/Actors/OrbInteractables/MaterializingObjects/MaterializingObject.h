@@ -30,9 +30,11 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 	// Orbs might interact with this actor
-	virtual void TriggerOrbInteraction(AOrbGroup* IncomingOrbs) override;
+	virtual void TriggerOrbInteraction(AOrbFlock* IncomingOrbs) override;
 
 private:
 	// How long is the platform faded in yet?
 	float FadeOutTimer = 0;
+
+	AOrbFlock* Flock = NULL;
 };

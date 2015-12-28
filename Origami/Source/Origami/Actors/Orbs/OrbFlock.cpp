@@ -118,7 +118,7 @@ FVector FOrbFlockMember::ComputeAvoidance(const AActor* actor, const UWorld* wor
 		ECollisionChannel::ECC_Visibility, //collision channel
 		rvTraceParams);*/
 
-	world->SweepSingleByChannel(rvHit, start, ahead, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(10), rvTraceParams);
+	world->SweepSingleByChannel(rvHit, start, ahead, FQuat::Identity, ECollisionChannel::ECC_MAX, FCollisionShape::MakeSphere(10), rvTraceParams);
 
 	
 
@@ -173,6 +173,7 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 		this->RootComponent = this->RootSceneComponent;
 	}
 
+	this->Color = FColor::White;
 
 	this->StaticMeshInstanceComponent = ObjectInitializer.CreateDefaultSubobject<UInstancedStaticMeshComponent>(this, TEXT("FlockMeshes"));
 	if (IsValid(StaticMeshInstanceComponent))
@@ -188,6 +189,7 @@ AOrbFlock::AOrbFlock(const FObjectInitializer& ObjectInitializer)
 			Light->SetRelativeRotation(FRotator::ZeroRotator);
 			Light->SetLightColor(FLinearColor::White);
 			Light->SetIntensity(10000);
+			Light->SetLightColor(this->Color, true);
 			Light->SetAttenuationRadius(1000);
 			Light->SetSourceRadius(0.0f);
 			Light->SetSourceLength(0.0f);
@@ -248,7 +250,14 @@ void AOrbFlock::BeginPlay()
 	if (!IsValid(Mesh) || !IsValid(StaticMeshInstanceComponent))
 		return;
 
+	this->OrbMaterialInstance = UMaterialInstanceDynamic::Create(this->Mesh->GetMaterial(0), this);
+	if (!this->OrbMaterialInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't create dynamic material instance from mesh."));
+		return;
+	}
 
+	this->StaticMeshInstanceComponent->SetMaterial(0, this->OrbMaterialInstance);
 	this->StaticMeshInstanceComponent->SetStaticMesh(Mesh);
 
 	for (int i = 0; i < this->Visual.OrbCount; i++)
@@ -486,25 +495,41 @@ void AOrbFlock::AttachToEntity(AActor* entity)
 	}
 }
 
-void AOrbFlock::DetachFromEntity()
+void AOrbFlock::DetachFromEntity(EOrbMode mode)
 {
 	this->DetachRootComponentFromParent(true);
 
 	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
 	{
 		this->AiController->BlackboardComponent->ClearValue(FName("AttachedActor"));
-		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::FreeRoam);
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)mode);
 		this->AiController->BlackboardComponent->SetValueAsBool(FName("HasReachedPlayer"), false);
 		this->AiController->BlackboardComponent->SetValueAsBool(FName("ReactivatedMovement"), false);
 	}
 }
 
-FVector AOrbFlock::CalculateNewTarget()
+void AOrbFlock::FindPointOfInterest(FVector point)
+{
+	DetachFromEntity();
+
+	if (this->AiController != nullptr && this->AiController->BlackboardComponent != nullptr)
+	{
+		
+		this->AiController->BlackboardComponent->SetValueAsEnum(FName("Mode"), (uint8)EOrbMode::FindAim);
+		if (this->Orbs.Num() == 0)
+			return;
+
+		this->Orbs[0].Target = point;
+		this->AiController->BlackboardComponent->SetValueAsVector(FName("Target"), point);
+	}
+}
+
+FVector AOrbFlock::CalculateNewTarget(FVector centerPoint)
 {
 	FOrbFlockMember& leader = this->Orbs[0];
 
 	FVector targetVelocity = this->Orbs[0].Target - this->Orbs[0].Transform.GetLocation();
-	leader.Target = this->GetRandomTarget() + this->GetActorLocation();
+	leader.Target = this->GetRandomTarget() + (centerPoint.Equals(FVector::ZeroVector) ? this->GetActorLocation() : centerPoint);
 	return leader.Target;
 }
 
@@ -522,7 +547,9 @@ void AOrbFlock::ResetTargetTo(FVector location)
 
 void AOrbFlock::ChangeColor(FColor color)
 {
-	UE_LOG(LogTemp, Log, TEXT("Not yet implemented!"));
+	this->Color = color;
+	this->OrbMaterialInstance->SetVectorParameterValue(TEXT("Color"), color);
+	this->Light->SetLightColor(color);
 }
 
 

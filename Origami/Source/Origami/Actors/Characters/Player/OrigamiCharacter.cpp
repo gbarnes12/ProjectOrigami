@@ -3,7 +3,7 @@
 #include "Origami.h"
 #include "Runtime/Engine/Classes/Components/SplineComponent.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
-#include "Origami/Actors/Entity.h"
+#include "Origami/Actors/Entities/Cocoon.h"
 #include "Origami/Actors/Orbs/OrbFlock.h"
 #include "OrigamiCharacter.h"
 
@@ -195,11 +195,11 @@ void AOrigamiCharacter::FindAim()
 		AActor* actor = rvHit.GetActor();
 		if (IsValid(actor))
 		{
-			if (actor->IsA(AEntity::StaticClass()))
+			if (actor->IsA(ACocoon::StaticClass()))
 			{
 				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Red, 1.0f, 2.0f);
-				AEntity* entity = Cast<AEntity>(actor);
-				if (IsValid(entity) && entity->bIsInteractable)
+				ACocoon* entity = Cast<ACocoon>(actor);
+				if (IsValid(entity))
 				{
 					//UKismetSystemLibrary::DrawDebugLine(GetWorld(), start, end, FLinearColor::Green, 0.2f);
 					this->Target = entity;
@@ -349,7 +349,7 @@ void AOrigamiCharacter::Fire()
 	// check whether the group we returned is still valid
 	if (IsValid(flock))
 	{
-		/*FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
+		FVector cameraLocation = this->GetFollowCamera()->GetComponentLocation();
 		FRotator cameraRotation = this->GetFollowCamera()->GetComponentRotation();
 
 		this->GetActorEyesViewPoint(cameraLocation, cameraRotation);
@@ -357,9 +357,9 @@ void AOrigamiCharacter::Fire()
 		FVector start = cameraLocation;
 		FVector end = cameraLocation + (cameraRotation.Vector() * 2000.0f) + FVector(0.0f, 0.0f, 300.0f);
 
-		group->StartMoveToTarget(NULL, end);
+		flock->FindPointOfInterest(end);
 
-		this->bIsSendingOrbs = true;*/
+		this->bIsSendingOrbs = true;
 	}
 }
 

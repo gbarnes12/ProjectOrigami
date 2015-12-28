@@ -1,8 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Origami.h"
-#include "ClimbingPlant.h"
+#include "Runtime/Engine/Classes/PhysicsEngine/PhysicsAsset.h"
 #include "Components/OrbTriggerComponents/Blue/OrbTriggerBlueComponent.h"
+#include "ClimbingPlant.h"
 
 
 // Sets default values
@@ -16,15 +17,24 @@ AClimbingPlant::AClimbingPlant()
 
 	// Find this mesh in the source folders
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder(TEXT("/Game/Origami/Objects/ClimbingPlant/Controller/ClimbingPlantSkeletalMesh.ClimbingPlantSkeletalMesh"));
+//	static ConstructorHelpers::FObjectFinder<UAnimationAsset> AnimationFinder(TEXT("/Game/Origami/Objects/AirFlower/Animations/AirFlowerPuffingDefault_Loop.AirFlowerPuffingDefault_Loop"));
+	static ConstructorHelpers::FObjectFinder<UPhysicsAsset> PhysicsFinder(TEXT("/Game/Origami/Objects/ClimbingPlant/Controller/ClimbingPlantSkeletalMesh_PhysicsAsset.ClimbingPlantSkeletalMesh_PhysicsAsset"));
+
 
 	// If it is found, set it as the mesh
-	if (MeshFinder.Succeeded())
+	if (MeshFinder.Succeeded() &&  PhysicsFinder.Succeeded())
 	{
+		Mesh->SetRelativeLocation(FVector::ZeroVector);
 		Mesh->SetSkeletalMesh(MeshFinder.Object);
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+
+		//Mesh->AnimationData.AnimToPlay = AnimationFinder.Object;
+		Mesh->SetPhysicsAsset(PhysicsFinder.Object);
+		Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+		Mesh->AttachTo(this->RootComponent);
 	}
 
 	// Overwrite the default trigger component to enable the color check
-	TriggerComponent->DestroyComponent();
 	TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerBlueComponent"));
 }
 
@@ -99,7 +109,7 @@ void AClimbingPlant::Tick(float DeltaTime)
 }
 
 // Orbs might interact with this actor
-void AClimbingPlant::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+void AClimbingPlant::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
 	Super::TriggerOrbInteraction(IncomingOrbs);
 

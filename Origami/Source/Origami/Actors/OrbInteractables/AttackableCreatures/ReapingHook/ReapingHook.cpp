@@ -43,7 +43,7 @@ void AReapingHook::Tick(float DeltaTime)
 }
 
 // Orbs might interact with this actor
-void AReapingHook::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+void AReapingHook::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
 	Super::TriggerOrbInteraction(IncomingOrbs);
 

@@ -7,6 +7,17 @@
 
 //#define USE_OLD_COLLISION
 
+UENUM(BlueprintType)
+enum class EOrbMode : uint8
+{
+
+	FreeRoam UMETA(DisplayName = "Roam"),
+	Attached UMETA(DisplayName = "Attached"),
+	FindAim UMETA(DisplayName = "FindAim"),
+	FindCocoon UMETA(DisplayName = "FindCocoon")
+};
+
+
 struct FOrbFlockMember
 {
 public:
@@ -152,11 +163,13 @@ public:
 
 	class AOrbAiController* AiController;
 	
+	struct FColor Color;
+
 public:
 	AOrbFlock(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "Flock")
-	FVector CalculateNewTarget();
+	FVector CalculateNewTarget(FVector centerPoint = FVector::ZeroVector);
 
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	bool IsLeaderAtLocation(FVector location, float thresholdDistance);
@@ -165,7 +178,7 @@ public:
 	void AttachToEntity(AActor* entity);
 
 	UFUNCTION(BlueprintCallable, Category = "Flock")
-	void DetachFromEntity();
+	void DetachFromEntity(EOrbMode mode = EOrbMode::FreeRoam);
 
 	void InitializeAiController();
 
@@ -175,10 +188,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	void ChangeColor(FColor color);
 
+
+	void FindPointOfInterest(FVector point);
+
 private:
-	/* The scene root component from which everything originates */
+	
+
+	/* Pointer to the orb material instance in order to modify parameters at runtime. */
+	class UMaterialInstanceDynamic* OrbMaterialInstance;
+
 	class USceneComponent* RootSceneComponent;
+
 	class UPointLightComponent* Light;
+
 	TArray<FOrbFlockMember> Orbs;
 	FVector TempRealTarget; 
 	bool bCollidedWithObject;

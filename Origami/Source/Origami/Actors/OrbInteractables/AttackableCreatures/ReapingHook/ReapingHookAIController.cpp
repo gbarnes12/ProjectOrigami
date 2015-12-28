@@ -11,7 +11,7 @@ AReapingHookAIController::AReapingHookAIController()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Create a new BehaviourTree
-	BehaviourTree = CreateDefaultSubobject<UReapingHookBehaviourTree>(TEXT("BehaviourTree"));
+/*	BehaviourTree = CreateDefaultSubobject<UReapingHookBehaviourTree>(TEXT("BehaviourTree"));
 
 	// And run it
 	RunBehaviorTree(BehaviourTree);
@@ -20,5 +20,5 @@ AReapingHookAIController::AReapingHookAIController()
 	BlackboardData = CreateDefaultSubobject<UReapingHookBlackboard>(TEXT("Blackboard"));
 
 	// And use it
-	UseBlackboard(BlackboardData, Blackboard);
+	UseBlackboard(BlackboardData, Blackboard);*/
 }
