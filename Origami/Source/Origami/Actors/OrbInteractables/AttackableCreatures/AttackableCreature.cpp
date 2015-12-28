@@ -12,12 +12,11 @@ AAttackableCreature::AAttackableCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Overwrite the default trigger component to enable the color check
-	TriggerComponent->DestroyComponent();
 	TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerRedComponent"));
 }
 
 // Orbs might interact with this actor
-void AAttackableCreature::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+void AAttackableCreature::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
 	Super::TriggerOrbInteraction(IncomingOrbs);
 

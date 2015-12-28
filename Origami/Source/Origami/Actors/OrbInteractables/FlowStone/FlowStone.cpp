@@ -24,7 +24,6 @@ AFlowStone::AFlowStone()
 	}
 
 	// Overwrite the default trigger component to enable the color check
-	TriggerComponent->DestroyComponent();
 	TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerBlueComponent"));
 }
 
@@ -44,7 +43,7 @@ void AFlowStone::Tick(float DeltaTime)
 }
 
 // Orbs might interact with this actor
-void AFlowStone::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+void AFlowStone::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
 	Super::TriggerOrbInteraction(IncomingOrbs);
 

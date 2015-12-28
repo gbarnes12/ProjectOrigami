@@ -18,6 +18,8 @@ class ORIGAMI_API UDissolveComponent : public UActorComponent
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialInstance;
 
+	UMeshComponent* meshComponent;
+
 	// Private values
 	float DissolveValue = 1.0f;
 	

@@ -2,6 +2,7 @@
 
 #include "Origami.h"
 #include "OrbTriggerComponent.h"
+#include "Actors/Orbs/OrbFlock.h"
 #include "Actors/OrbInteractables/OrbInteractable.h"
 
 
@@ -15,7 +16,7 @@ UOrbTriggerComponent::UOrbTriggerComponent()
 }
 
 // Trigger function called by incoming orbs
-bool UOrbTriggerComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+bool UOrbTriggerComponent::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
 	if (IsAbleToTrigger(IncomingOrbs))
 	{
@@ -32,7 +33,7 @@ bool UOrbTriggerComponent::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
 }
 
 // Function to check for ability to pull the trigger
-bool UOrbTriggerComponent::IsAbleToTrigger(AOrbGroup* IncomingOrbs)
+bool UOrbTriggerComponent::IsAbleToTrigger(AOrbFlock* IncomingOrbs)
 {
 	return true;
 }

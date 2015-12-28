@@ -3,13 +3,14 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "Entity.generated.h"
 
 enum EMantleState {
 	Mantled = 0, 
 	Unmantled = 1
 };
+
+class AOrigamiCharacter;
 
 UCLASS()
 class ORIGAMI_API AEntity : public AActor

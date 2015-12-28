@@ -6,17 +6,14 @@
 
 // Sets default values for this component's properties
 UDissolveComponent::UDissolveComponent()
+	: Super()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	bWantsBeginPlay = true;
+	//bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// Find the base material
-	static ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(TEXT("Material'/Game/Origami/Materials/Mat_Dissolve.Mat_Dissolve'"));
-	
-	if(MaterialFinder.Succeeded())
-		BaseMaterial = (UMaterial*)MaterialFinder.Object;
 }
 
 
@@ -25,21 +22,19 @@ void UDissolveComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(!BaseMaterial)
-		return;
-
-	// Create the material instance
-	MaterialInstance = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-
 	// Find the actor's static mesh component(s)
 	AActor* Actor = GetOwner();
 
-	TArray<UMeshComponent*> Components;
-	Actor->GetComponents<UMeshComponent>(Components);
+	UActorComponent* component = Actor->GetComponentByClass(UMeshComponent::StaticClass());
+	if (!component)
+		return;
 
-	// Assign the material instance to all of them
-	for (int32 i = 0; i<Components.Num(); i++)
-		Components[i]->SetMaterial(0, MaterialInstance);
+	meshComponent = Cast<UMeshComponent>(component);
+	if (!meshComponent)
+		return;
+
+	MaterialInstance = UMaterialInstanceDynamic::Create(meshComponent->GetMaterial(0)->GetMaterial(), this);
+	meshComponent->SetMaterial(0, MaterialInstance);
 }
 
 
@@ -65,11 +60,22 @@ void UDissolveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 void UDissolveComponent::Assemble()
 {
 	bShouldDissolve = false;
+
+	if (!meshComponent)
+		return;
+
+	meshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void UDissolveComponent::Dissolve()
 {
 	bShouldDissolve = true;
+
+	if (!meshComponent)
+		return;
+
+	meshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 bool UDissolveComponent::IsFullyAssembled()

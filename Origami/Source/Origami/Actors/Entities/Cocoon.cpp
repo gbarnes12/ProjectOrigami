@@ -5,6 +5,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Actors/Orbs/OrbGroup.h"
 #include "Actors/Orbs/OrbFlock.h"
+#include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "Cocoon.h"
 
 
@@ -14,7 +15,6 @@ ACocoon::ACocoon()
 	: Super()
 {
 	// Set this to true since the player needs to be able to interact with us
-	this->bIsInteractable = true;
 	this->ActionButtonPrompt = NULL;
 	this->bSpawnOrbsAtStartup = true;
 	this->Orbs = NULL;
@@ -103,4 +103,12 @@ void ACocoon::Interact(AOrigamiCharacter* player)
 	//Play calling orb animation
 	player->bIsCallingOrbs = true;
 	this->Orbs = NULL;
+}
+
+void ACocoon::ReattachOrb(AOrbFlock* flock)
+{
+	if (IsValid(this->Orbs))
+		return;
+
+	this->Orbs = flock;
 }

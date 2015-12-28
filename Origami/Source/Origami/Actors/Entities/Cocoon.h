@@ -5,6 +5,9 @@
 #include "Actors/Entity.h"
 #include "Cocoon.generated.h"
 
+class AOrigamiCharacter;
+class AEntity;
+
 /**
  * 
  */
@@ -30,6 +33,9 @@ public:
 	virtual void Interact(AOrigamiCharacter* player) override;
 	virtual void EnterInteractionRange(AOrigamiCharacter* player, FVector collisionPoint) override;
 	virtual void LeaveInteractionRange(AOrigamiCharacter* player) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Flock")
+	void ReattachOrb(AOrbFlock* flock);
 
 	UFUNCTION(BlueprintCallable, Category = "Flock")
 	bool GetIsFree() const { return (this->Orbs == NULL); }

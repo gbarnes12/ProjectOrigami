@@ -4,6 +4,7 @@
 
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Public/EngineUtils.h"
+#include "Actors/Characters/Player/OrigamiCharacter.h"
 #include "OrigamiGameMode.h"
 #include "Entity.h"
 

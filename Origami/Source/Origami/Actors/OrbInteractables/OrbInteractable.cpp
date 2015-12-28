@@ -9,13 +9,34 @@ AOrbInteractable::AOrbInteractable()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bIsUsable = true;
 
-	// Set a default trigger component for any unspecialised objects
-	TriggerComponent = CreateDefaultSubobject<UOrbTriggerComponent>(TEXT("OrbTriggerComponent"));
+	// the attachment point for orbs!
+	
+	USceneComponent* sceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	if (sceneComponent)
+	{
+		sceneComponent->SetRelativeLocation(FVector::ZeroVector);
+		this->RootComponent = sceneComponent;
+	}
+}
+
+void AOrbInteractable::BeginPlay() {
+
+	Super::BeginPlay();
+
+	AttachmentPoint = this->GetActorLocation() + FVector(0.0f, 0.0f, 1.0f) * 200.5f;
+
 }
 
 // Orbs might interact with this actor
-void AOrbInteractable::TriggerOrbInteraction(AOrbGroup* IncomingOrbs)
+void AOrbInteractable::TriggerOrbInteraction(AOrbFlock* IncomingOrbs)
 {
+	bIsUsable = false;
+}
 
+// check whether or not this actor is usable by orbs!
+bool AOrbInteractable::GetIsUsable()
+{
+	return bIsUsable;
 }
