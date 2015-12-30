@@ -24,11 +24,11 @@ public:
 
 	// The maximum distance from the flower, where a force can be added. The further, the less force.
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float MaxDistance = 600;
+		float MaxDistance = 1000;
 
 	// The maximum angle in which the force is applied, it ends in a cone, where the force decreases in the edge regions.
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float MaxAngle = 60;
+		float MaxAngle = 45;
 
 	// Called when the game starts
 	virtual void BeginPlay() override;

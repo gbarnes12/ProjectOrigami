@@ -87,7 +87,7 @@ public:
 	bool bIsSendingOrbs;
 
 	UPROPERTY(EditAnywhere, Category = OrigamiCharacter)
-	float DeathHeight = -2000;
+	float DeathHeight = -3000;
 
 public:
 	/*  */
@@ -102,11 +102,23 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
+	/**
+	* Called via input to turn at standard rate.
+	* @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
+	*/
+	void Turn(float Rate);
+
 	/** 
 	 * Called via input to turn at a given rate. 
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
 	void TurnAtRate(float Rate);
+
+	/**
+	* Called via input to turn look up/down at standard rate.
+	* @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
+	*/
+	void LookUp(float Rate);
 
 	/**
 	 * Called via input to turn look up/down at a given rate. 

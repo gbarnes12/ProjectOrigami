@@ -103,6 +103,21 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 			SetIsTargetMovingForOrbs(true);
 	}
 
+	// Add a yaw depending on the roll
+	AddActorLocalRotation(FRotator(0, GetActorRotation().Roll / 30, 0));
+
+	// Reset the roll whenever touching the ground
+	if (GetMovementComponent()->IsMovingOnGround())
+	{
+		SetActorRotation(FRotator(0, GetActorRotation().Yaw, 0));
+	}
+
+	// When the character is in the air, apply an up-force depending on the roll and pitch
+	else
+	{
+		CharacterMovement->AddForce(GetActorUpVector() * CharacterMovement->Mass * 490.0f * (1.0f - FMath::Abs(GetActorRotation().Pitch) / 90) * (1.0f - FMath::Abs(GetActorRotation().Roll) / 90));
+	}
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	//                           This has to be removed                                //
 	switch ((int)Teleporter)
@@ -111,10 +126,10 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 		SetActorLocationAndRotation(FVector(1900, 400, 272), FQuat(0, 0, 180, 1));
 		break;
 	case 2:
-		SetActorLocationAndRotation(FVector(-12000, -2500, -110), FQuat(0, 0, 180, 1));
+		SetActorLocationAndRotation(FVector(-27000, -7500, -270), FQuat(0, 0, 180, 1));
 		break;
 	case 3:
-		SetActorLocationAndRotation(FVector(-60000, -27750, 180), FQuat(0, 0, -130, 1));
+		SetActorLocationAndRotation(FVector(-120000, -56000, 270), FQuat(0, 0, -130, 1));
 		break;
 	}
 
@@ -286,6 +301,7 @@ bool AOrigamiCharacter::IsDead()
 
 void AOrigamiCharacter::DeathEffects()
 {
+	bIsDead = true;
 	FollowCamera->PostProcessSettings.bOverride_VignetteIntensity = true;
 }
 
@@ -313,9 +329,9 @@ void AOrigamiCharacter::SetupPlayerInputComponent(class UInputComponent* InputCo
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-	InputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	InputComponent->BindAxis("Turn", this, &AOrigamiCharacter::Turn);
 	InputComponent->BindAxis("TurnRate", this, &AOrigamiCharacter::TurnAtRate);
-	InputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	InputComponent->BindAxis("LookUp", this, &AOrigamiCharacter::LookUp);
 	InputComponent->BindAxis("LookUpRate", this, &AOrigamiCharacter::LookUpAtRate);
 
 	// handle touch devices
@@ -401,10 +417,28 @@ void AOrigamiCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Loca
 	}
 }
 
+void AOrigamiCharacter::Turn(float Rate)
+{
+	// In the air there should be less control via mouse
+	if (GetMovementComponent()->IsMovingOnGround())
+		AddControllerYawInput(Rate);
+	else
+		AddControllerYawInput(Rate / 2);
+}
+
 void AOrigamiCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AOrigamiCharacter::LookUp(float Rate)
+{
+	// In the air there should be less control via mouse
+	if (GetMovementComponent()->IsMovingOnGround())
+		AddControllerPitchInput(Rate);
+	else
+		AddControllerPitchInput(Rate / 2);
 }
 
 void AOrigamiCharacter::LookUpAtRate(float Rate)
@@ -417,39 +451,75 @@ void AOrigamiCharacter::MoveForward(float Value)
 {
 	ForwardAmount = Value;
 
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (ForwardAmount != 0.0f))
 	{
+		if (!GetMovementComponent()->IsMovingOnGround())
+		{
+			CameraBoom->SetWorldRotation(FRotator(GetActorRotation().Pitch - 15, GetActorRotation().Yaw, 0));
+			Controller->SetControlRotation(FRotator(GetActorRotation().Pitch - 15, GetActorRotation().Yaw, 0));
+		}
+
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
-	
-		TargetZoom = this->MaxZoom;
-		return;
+
+		// Is the character moving on ground or moving forward, he can accelerate as normal
+		if (ForwardAmount > 0 || GetMovementComponent()->IsMovingOnGround())
+		{
+			AddMovementInput(Direction, ForwardAmount);
+			TargetZoom = this->MaxZoom;
+			return;
+		}
+
+		// Is he flying and presses back so he brakes
+		else if (ForwardAmount < 0 && (CharacterMovement->Velocity * Direction).Size() > 0)
+		{
+			CharacterMovement->AddForce((CharacterMovement->Velocity.X < 0 ? 1 : -1) * (CharacterMovement->Velocity * Direction) * 100);
+		}
 	}
 
 	TargetZoom = this->MinZoom;
-	
 }
 
 void AOrigamiCharacter::MoveRight(float Value)
 {
 	SideAmount = Value;
 
-	if ( (Controller != NULL) && (Value != 0.0f) )
+	if ((Controller != NULL) && (SideAmount != 0.0f))
 	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-	
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
-		return;
+		if (GetMovementComponent()->IsMovingOnGround())
+		{
+			// find out which way is right
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			// get right vector 
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			// add movement in that direction
+			AddMovementInput(Direction, SideAmount);
+			return;
+		}
+		else
+		{
+			CameraBoom->SetWorldRotation(FRotator(GetActorRotation().Pitch - 15, GetActorRotation().Yaw, 0));
+			Controller->SetControlRotation(FRotator(GetActorRotation().Pitch - 15, GetActorRotation().Yaw, 0));
+
+			// Roll to a given maximum of 30 degrees
+			float rollToAdd = 0;
+
+			// If the roll is on the opposite side, rotate faster
+			if (SideAmount < 0 && GetActorRotation().Roll > 0 || SideAmount > 0 && GetActorRotation().Roll < 0)
+				rollToAdd = SideAmount;
+
+			// Otherwise rotate slowlier
+			else if (SideAmount < 0 && GetActorRotation().Roll > -20 || SideAmount > 0 && GetActorRotation().Roll < 20)
+				rollToAdd = SideAmount * 0.1f;
+
+			AddActorLocalRotation(FRotator(0, 0, rollToAdd));
+		}
 	}
 }
 
