@@ -11,6 +11,27 @@ class ORIGAMI_API UAirFlowComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+	struct FParticleSpawner
+	{
+	public:
+		FVector Velocity;
+		UParticleSystemComponent* Trail;
+
+		FParticleSpawner()
+		{
+			Velocity = FVector::ZeroVector;
+			Trail = nullptr;
+		};
+	};
+
+	class UParticleSystem* ParticleSystem;
+
+	float NumberOfParticleSpawners = 24;
+
+	TArray<FParticleSpawner> ParticleSpawner;
+
+	void AddParticleSpawner(const int id, const FVector& velocity);
+
 public:	
 	// Sets default values for this component's properties
 	UAirFlowComponent();

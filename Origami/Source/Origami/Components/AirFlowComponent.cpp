@@ -11,6 +11,15 @@ UAirFlowComponent::UAirFlowComponent()
 	// off to improve performance if you don't need them.
 	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
+
+	if (!IsValid(ParticleSystem))
+	{
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> ParticleFinder(TEXT("/Game/Origami/Objects/Orb/Visual/Ps_Orb_AnimTrail.Ps_Orb_AnimTrail"));
+		if (ParticleFinder.Succeeded())
+		{
+			this->ParticleSystem = ParticleFinder.Object;
+		}
+	}
 }
 
 
@@ -33,6 +42,17 @@ void UAirFlowComponent::BeginPlay()
 		CharacterMovement = Cast<UCharacterMovementComponent>(pawnMovement);
 	else
 		PrimaryComponentTick.bCanEverTick = false;
+
+	// Create as many particle spawners as specified
+	for (int i = 0; i < NumberOfParticleSpawners; i++)
+	{
+		FVector velocity = FVector(0, 0, MaxDistance / 100);
+
+		velocity = velocity.RotateAngleAxis(MaxAngle, GetOwner()->GetActorRightVector());
+		velocity = velocity.RotateAngleAxis(360 / NumberOfParticleSpawners, GetOwner()->GetActorUpVector());
+
+		AddParticleSpawner(i, velocity);
+	}
 }
 
 
@@ -69,5 +89,40 @@ void UAirFlowComponent::TickComponent( float DeltaTime, ELevelTick TickType, FAc
 		// Apply the specific force to the characters mesh
 		CharacterMovement->AddForce(GetOwner()->GetActorUpVector() * FlowStrength * distanceIntensity * angleIntensity);
 	}
+
+	// Move the particle spawners
+	for (int i = 0; i < NumberOfParticleSpawners; i++)
+	{
+		if (FVector::Dist(ParticleSpawner[i].Trail->GetComponentLocation(), GetOwner()->GetActorLocation()) > MaxDistance)
+		{
+			ParticleSpawner[i].Trail->UnregisterComponent();
+			ParticleSpawner[i].Trail->SetWorldLocation(GetOwner()->GetActorLocation());
+			ParticleSpawner[i].Trail->RegisterComponent();
+		}
+		else
+		{
+			ParticleSpawner[i].Trail->SetWorldLocation(ParticleSpawner[i].Trail->GetComponentLocation() + ParticleSpawner[i].Velocity);
+		}
+	}
 }
 
+
+// Adds a new particle spawner which moves in the given direction
+void UAirFlowComponent::AddParticleSpawner(const int id, const FVector& velocity)
+{
+	FParticleSpawner particleSpawner;
+
+	const FString particleSystemName = "PS_" + FString::FromInt(id);
+	UParticleSystemComponent* psComp = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass(), FName(*particleSystemName));
+	if (psComp)
+	{
+		psComp->SetTemplate(this->ParticleSystem);
+		psComp->SetRelativeRotation(FRotator::ZeroRotator);
+		psComp->RegisterComponent();
+		particleSpawner.Trail = psComp;
+	}
+
+	particleSpawner.Velocity = velocity;
+
+	ParticleSpawner.Add(particleSpawner);
+}
