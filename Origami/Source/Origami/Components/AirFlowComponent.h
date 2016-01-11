@@ -20,7 +20,7 @@ public:
 
 	// The maximum force added to the character being in the airflow (-980 is gravity per kg).
 	UPROPERTY(EditAnywhere, Category = AirFlow)
-		float FlowStrength = 600000;
+		float FlowStrength = 60000;
 
 	// The maximum distance from the flower, where a force can be added. The further, the less force.
 	UPROPERTY(EditAnywhere, Category = AirFlow)

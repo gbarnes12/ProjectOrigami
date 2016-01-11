@@ -67,7 +67,7 @@ void UAirFlowComponent::TickComponent( float DeltaTime, ELevelTick TickType, FAc
 		float angleIntensity = 1.0f - FMath::Pow(angle / MaxAngle, 2);
 
 		// Apply the specific force to the characters mesh
-		CharacterMovement->AddForce(GetOwner()->GetActorUpVector() * FlowStrength * distanceIntensity * angleIntensity);
+		CharacterMovement->AddForce(CharacterMovement->GetOwner()->GetActorUpVector() * FlowStrength * distanceIntensity * angleIntensity);
 	}
 }
 

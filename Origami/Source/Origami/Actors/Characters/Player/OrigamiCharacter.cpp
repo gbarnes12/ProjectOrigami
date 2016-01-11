@@ -104,7 +104,7 @@ void AOrigamiCharacter::Tick(float deltaSeconds)
 	}
 
 	// Add a yaw depending on the roll
-	AddActorLocalRotation(FRotator(0, GetActorRotation().Roll / 30, 0));
+	//>AddActorLocalRotation(FRotator(0, GetActorRotation().Roll / 30, 0));
 
 	// Reset the roll whenever touching the ground
 	if (GetMovementComponent()->IsMovingOnGround())
@@ -515,8 +515,8 @@ void AOrigamiCharacter::MoveRight(float Value)
 				rollToAdd = SideAmount;
 
 			// Otherwise rotate slowlier
-			else if (SideAmount < 0 && GetActorRotation().Roll > -20 || SideAmount > 0 && GetActorRotation().Roll < 20)
-				rollToAdd = SideAmount * 0.1f;
+			else if (SideAmount < 0 && GetActorRotation().Roll > -30 || SideAmount > 0 && GetActorRotation().Roll < 30)
+				rollToAdd = SideAmount * 0.2f;
 
 			AddActorLocalRotation(FRotator(0, 0, rollToAdd));
 		}
